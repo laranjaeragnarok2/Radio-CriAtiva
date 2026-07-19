@@ -1,7 +1,7 @@
 /* index.js - Aplicativo de Rádio e Hub de Artistas */
 
 // --- CONFIGURAÇÃO DA RÁDIO (Substitua pelas suas URLs do AzuraCast) ---
-const STREAM_URL = 'http://localhost/listen/radio_criativa/radio.mp3'; // URL do AzuraCast local
+const STREAM_URL = 'http://localhost:8081/stream'; // URL via proxy de stream do import_server
 const API_URL = 'http://localhost/api/nowplaying/1'; // API do AzuraCast local
 
 // --- ELEMENTOS DO DOM ---

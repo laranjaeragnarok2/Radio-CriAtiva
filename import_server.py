@@ -145,6 +145,39 @@ class ImportHandler(http.server.BaseHTTPRequestHandler):
             self.send_response(404)
             self.end_headers()
 
+    def do_GET(self):
+        if self.path == '/stream':
+            import urllib.request
+            stream_url = "http://localhost/listen/radio_criativa/radio.mp3"
+            try:
+                req = urllib.request.Request(stream_url)
+                # Faz requisição simples para o AzuraCast (sem Range)
+                with urllib.request.urlopen(req) as response:
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'audio/mpeg')
+                    self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                    self.send_header('Pragma', 'no-cache')
+                    self.send_header('Expires', '0')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    
+                    try:
+                        while True:
+                            chunk = response.read(1024 * 8)
+                            if not chunk:
+                                break
+                            self.wfile.write(chunk)
+                    except (ConnectionResetError, BrokenPipeError):
+                        # Conexão encerrada pelo navegador (player pausado)
+                        pass
+            except Exception as e:
+                print(f"[Import Server] Erro no proxy de stream: {e}")
+                self.send_response(500)
+                self.end_headers()
+        else:
+            self.send_response(404)
+            self.end_headers()
+
     def send_error_response(self, message):
         self.send_response(400)
         self.send_header('Content-Type', 'application/json')
