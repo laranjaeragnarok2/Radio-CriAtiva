@@ -615,9 +615,14 @@ if (btnSubmitAnother) {
     });
 }
 
-// Ajustar todos os links do Dashboard para usar o host atual (facilita o acesso via rede local)
+// Ajustar todos os links do Dashboard para usar o host atual ou localhost se estiver hospedado online (híbrido)
 document.querySelectorAll('.btn-dashboard-link').forEach(link => {
-    link.href = `http://${window.location.hostname}`;
+    const host = window.location.hostname;
+    if (host.includes('github.io') || host.includes('vercel.app')) {
+        link.href = 'http://localhost';
+    } else {
+        link.href = `http://${host}`;
+    }
 });
 
 // Injetar o Host/IP atual nas instruções de configuração do encoder
