@@ -1,8 +1,20 @@
 /* index.js - Aplicativo de Rádio e Hub de Artistas */
 
-// --- CONFIGURAÇÃO DA RÁDIO (Substitua pelas suas URLs do AzuraCast) ---
-const STREAM_URL = 'http://localhost:8081/stream'; // URL via proxy de stream do import_server
-const API_URL = 'http://localhost/api/nowplaying/1'; // API do AzuraCast local
+// --- CONFIGURAÇÃO DA RÁDIO ---
+const HOSTNAME = window.location.hostname;
+const isLocal = HOSTNAME === 'localhost' || 
+                HOSTNAME === '127.0.0.1' || 
+                HOSTNAME.startsWith('192.168.') || 
+                HOSTNAME.startsWith('10.') || 
+                HOSTNAME.endsWith('.local');
+
+const STREAM_URL = isLocal 
+    ? `http://${HOSTNAME}:8081/stream` 
+    : 'https://icecast.radiofrance.fr/fip-midfi.mp3'; // Fallback público no GitHub Pages
+
+const API_URL = isLocal 
+    ? `http://${HOSTNAME}/api/nowplaying/1` 
+    : 'https://demo.azuracast.com/api/nowplaying/1'; // Fallback público no GitHub Pages
 
 // --- ELEMENTOS DO DOM ---
 const audio = document.getElementById('audio-stream');
