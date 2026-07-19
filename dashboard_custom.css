@@ -1,0 +1,201 @@
+/* Import Google Fonts for headings only */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+/* Apply custom retro variables inside AzuraCast layout */
+[data-bs-theme] {
+    --bs-body-bg: #0b0914 !important;
+    --bs-body-color: #f8fafc !important;
+    --bs-primary: #ff007f !important;
+    --bs-primary-rgb: 255, 0, 127 !important;
+    --bs-secondary: #221c38 !important;
+    --bs-dark: #0f0d1a !important;
+    --bs-light: #f8fafc !important;
+    --bs-card-bg: #161226 !important;
+}
+
+/* Base Body Styles */
+body {
+    background-color: #0b0914 !important;
+    color: #f8fafc !important;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    font-size: 0.95rem !important;
+    line-height: 1.5 !important;
+}
+
+/* Subtle Retro Grid (Extremely low opacity so it doesn't distract) */
+body::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.006) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.006) 1px, transparent 1px);
+    background-size: 30px 30px;
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* Remove CRT Scanlines on Admin Dashboard for perfect text clarity */
+body::after {
+    display: none !important;
+}
+
+/* Card Header - Fix Contrast with White Text on Pink Background */
+.card-header, .bg-primary, .badge-primary {
+    background-color: #ff007f !important;
+    color: #ffffff !important;
+}
+
+.card-header *, .bg-primary *, .badge-primary * {
+    color: #ffffff !important;
+}
+
+/* Custom Cards */
+.card {
+    background-color: #161226 !important;
+    border: 2px solid #3b2d69 !important;
+    box-shadow: 4px 4px 0px #000000 !important;
+    border-radius: 6px !important;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+/* Headings - Styled retro but clean */
+h1, h2, h3, h4, h5, h6, .card-title {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    color: #00f0ff !important;
+}
+
+/* Specific decorative titles can use the pixel font */
+.navbar-brand, .brand-text {
+    font-family: 'Press Start 2P', monospace !important;
+    font-size: 0.8rem !important;
+    color: #00f0ff !important;
+}
+
+/* Sidebar and Navbar Styling */
+.navbar, .app-header {
+    background-color: #0f0d1a !important;
+    border-bottom: 2px solid #ff007f !important;
+}
+
+.sidebar, #sidebar {
+    background-color: #0f0d1a !important;
+    border-right: 2px solid #3b2d69 !important;
+}
+
+/* Tables - Perfect Readability */
+.table {
+    color: #f8fafc !important;
+}
+
+.table th {
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    font-size: 0.8rem !important;
+    letter-spacing: 0.5px !important;
+    color: #cbd5e1 !important;
+    background-color: #0f0d1a !important;
+    border-bottom: 2px solid #3b2d69 !important;
+}
+
+.table td {
+    background-color: transparent !important;
+    border-bottom: 1px solid rgba(59, 45, 105, 0.4) !important;
+    vertical-align: middle !important;
+}
+
+/* Buttons - Clean Sans-Serif and Beveled */
+.btn {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    font-size: 0.75rem !important;
+    letter-spacing: 0.5px !important;
+    border: 2px solid #000000 !important;
+    box-shadow: 2px 2px 0px #000000 !important;
+    border-radius: 4px !important;
+    padding: 8px 16px !important;
+    transition: all 0.15s ease !important;
+}
+
+.btn-primary {
+    background-color: #ff007f !important;
+    border-color: #000000 !important;
+    color: #ffffff !important;
+}
+
+.btn-primary:hover {
+    background-color: #ff3399 !important;
+    transform: translate(-1px, -1px) !important;
+    box-shadow: 3px 3px 0px #000000 !important;
+}
+
+.btn-primary:active {
+    transform: translate(1px, 1px) !important;
+    box-shadow: 1px 1px 0px #000000 !important;
+}
+
+.btn-secondary {
+    background-color: #221c38 !important;
+    color: #f8fafc !important;
+    border-color: #000000 !important;
+}
+
+.btn-secondary:hover {
+    background-color: #2e264d !important;
+}
+
+/* Inputs and Form Controls */
+input, select, textarea, .form-control, .form-select {
+    background-color: #0a0813 !important;
+    border: 2px solid #3b2d69 !important;
+    border-radius: 4px !important;
+    color: #ffffff !important;
+    font-family: monospace !important;
+    padding: 8px 12px !important;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: #00f0ff !important;
+    box-shadow: 0 0 5px rgba(0, 240, 255, 0.4) !important;
+    background-color: #000000 !important;
+    color: #39ff14 !important;
+}
+
+/* Alerts and Notices */
+.alert {
+    background-color: #221c38 !important;
+    border: 2px solid #3b2d69 !important;
+    border-radius: 4px !important;
+    color: #f8fafc !important;
+}
+
+.alert-info {
+    border-left: 5px solid #00f0ff !important;
+}
+
+.alert-warning {
+    border-left: 5px solid #ffb700 !important;
+}
+
+.alert-danger {
+    border-left: 5px solid #ff007f !important;
+}
+
+/* Hide attributions/footers */
+footer, .footer, footer a, .attribution, .text-muted.text-center {
+    display: none !important;
+}
+
+/* Hide AzuraCast donation button and parent notification banner */
+a[href*="donate.azuracast.com"],
+.alert:has(a[href*="donate.azuracast.com"]),
+#notification-donation,
+[id*="notification-donation"] {
+    display: none !important;
+}
+

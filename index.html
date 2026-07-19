@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Portal de Rádio Online Independente e Hub Descentralizado de Artistas. Ouça música independente, aprenda a transmitir ao vivo e faça parte da nossa comunidade.">
+    <title>Radio criAtiva - Rádio & Art Hub</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&family=Outfit:wght@400;600;800&family=Plus+Jakarta+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <!-- Retro CRT Scanline Overlay -->
+    <div class="crt-overlay"></div>
+    <!-- Background Blur Decorative Circles -->
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+    <div class="bg-glow bg-glow-3"></div>
+ 
+    <div class="app-container">
+        <!-- Header / Navigation -->
+        <header class="app-header">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-radio"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>Radio criAtiva</h1>
+                    <span>Rádio & Art Hub</span>
+                </div>
+            </div>
+            <nav class="app-nav">
+                <button class="nav-btn active" data-target="home-tab" id="nav-btn-home">
+                    <i class="fa-solid fa-house"></i> Início
+                </button>
+                <button class="nav-btn" data-target="radio-tab" id="nav-btn-radio">
+                    <i class="fa-solid fa-compact-disc"></i> A Rádio
+                </button>
+                <button class="nav-btn" data-target="manual-tab" id="nav-btn-manual">
+                    <i class="fa-solid fa-book-open"></i> Manual do Artista
+                </button>
+                <button class="nav-btn" data-target="transmitir-tab" id="nav-btn-transmitir">
+                    <i class="fa-solid fa-tower-broadcast"></i> Como Transmitir
+                </button>
+                <button class="btn btn-secondary btn-web3" id="btn-connect-wallet" title="Conectar Carteira Web3">
+                    <i class="fa-solid fa-wallet"></i> <span>Conectar Carteira</span>
+                </button>
+            </nav>
+        </header>
+
+        <!-- Main Content Area (SPA tabs) -->
+        <main class="app-content">
+
+            <!-- HOME TAB -->
+            <section id="home-tab" class="tab-content active-tab">
+                <div class="hero-section">
+                    <div class="hero-info">
+                        <span class="badge badge-accent">Rádio Independente</span>
+                        <h2>Um Hub de Som e Arte Descentralizada</h2>
+                        <p>Bem-vindo à Radio criAtiva. Somos mais que uma rádio online; somos um espaço autônomo e de código aberto para artistas e criadores compartilharem suas produções diretamente com o mundo, sem intermediários corporativos.</p>
+                        <div class="hero-actions">
+                            <button class="btn btn-primary" onclick="switchTab('transmitir-tab')" id="hero-btn-transmit">
+                                <i class="fa-solid fa-tower-broadcast"></i> Como Transmitir
+                            </button>
+                            <button class="btn btn-secondary" onclick="switchTab('manual-tab')" id="hero-btn-join">
+                                <i class="fa-solid fa-book-open"></i> Manual do Artista
+                            </button>
+                            <a href="http://localhost" target="_blank" class="btn btn-secondary btn-dashboard-link" id="hero-btn-dashboard" title="Acessar painel do AzuraCast">
+                                <i class="fa-solid fa-gauge-high"></i> Dashboard
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- HERO PLAYER CARD -->
+                    <div class="hero-player-wrapper">
+                        <div class="player-card">
+                            <div class="stream-status">
+                                <span class="live-indicator offline" id="stream-indicator">
+                                    <span class="live-dot"></span> <span id="indicator-text">REPRODUZIR</span>
+                                </span>
+                                <span class="listener-count" id="listener-count">
+                                    <i class="fa-solid fa-headphones"></i> 0 ouvintes
+                                </span>
+                            </div>
+
+                            <!-- Retro LCD Screen (Visualizer & Metadata) -->
+                            <div class="player-lcd-screen">
+                                <div class="lcd-tuner">
+                                    <span class="lcd-frequency" id="lcd-frequency">FM 90.9 MHz</span>
+                                    <span class="lcd-signal"><i class="fa-solid fa-tower-broadcast"></i> TUNE</span>
+                                </div>
+                                <div class="lcd-visualizer-container">
+                                    <canvas id="player-visualizer"></canvas>
+                                </div>
+                                <div class="lcd-metadata">
+                                    <div class="lcd-track-title" id="player-track-title">Carregando Rádio...</div>
+                                    <div class="lcd-track-artist" id="player-track-artist">Radio criAtiva</div>
+                                </div>
+                            </div>
+
+                            <!-- Retro Cassette Tape Deck -->
+                            <div class="cassette-deck-container">
+                                <div class="cassette-shell" id="artwork-disk-wrapper">
+                                    <!-- Cassette Screws -->
+                                    <div class="cassette-screw screw-tl"><i class="fa-solid fa-plus"></i></div>
+                                    <div class="cassette-screw screw-tr"><i class="fa-solid fa-plus"></i></div>
+                                    <div class="cassette-screw screw-bl"><i class="fa-solid fa-plus"></i></div>
+                                    <div class="cassette-screw screw-br"><i class="fa-solid fa-plus"></i></div>
+                                    
+                                    <!-- Side A label -->
+                                    <div class="cassette-side">A</div>
+                                    
+                                    <!-- Tape Label Sticker -->
+                                    <div class="cassette-label">
+                                        <div class="label-heading">Radio criAtiva</div>
+                                        <div class="label-sub">LIVRE & DESCENTRALIZADA</div>
+                                    </div>
+                                    
+                                    <!-- Tape Window & Spindles -->
+                                    <div class="cassette-window">
+                                        <div class="tape-roll roll-left">
+                                            <div class="spindle spindle-left" id="spindle-left">
+                                                <div class="spindle-teeth"></div>
+                                            </div>
+                                        </div>
+                                        <div class="tape-roll roll-right">
+                                            <div class="spindle spindle-right" id="spindle-right">
+                                                <div class="spindle-teeth"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Small Album art on Cassette Label -->
+                                    <img src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=100&auto=format&fit=crop" alt="Capa" class="cassette-album-art" id="player-album-art">
+                                </div>
+                            </div>
+
+                            <!-- Decentralization IPFS Meta Info (Styled like tape labels) -->
+                            <div class="track-ipfs-info" id="track-ipfs-info">
+                                <span class="ipfs-badge" id="ipfs-cid-badge" title="Hash IPFS da faixa de áudio">
+                                    <i class="fa-solid fa-cube"></i> IPFS: <span id="track-ipfs-cid">Carregando...</span>
+                                </span>
+                                <span class="license-badge" id="license-badge" title="Licença de Distribuição Livre">
+                                    <i class="fa-solid fa-scale-balanced"></i> <span id="track-license">CC-BY-NC</span>
+                                </span>
+                            </div>
+
+                            <!-- Mechanical Cassette Keys & Volume Fader -->
+                            <div class="deck-controls">
+                                <div class="deck-keys">
+                                    <button class="key-btn key-rec" disabled title="Gravar (Inativo)"><span class="key-cap"></span><span class="key-label">REC</span></button>
+                                    <button class="key-btn key-rew" disabled title="Voltar (Inativo)"><span class="key-cap"></span><span class="key-label">REW</span></button>
+                                    <button class="key-btn key-play" id="btn-play-pause" title="Play/Pause"><span class="key-cap"></span><span class="key-label">PLAY</span></button>
+                                    <button class="key-btn key-stop" id="btn-stop" title="Stop"><span class="key-cap"></span><span class="key-label">STOP</span></button>
+                                    <button class="key-btn key-pause" id="btn-pause" title="Pause"><span class="key-cap"></span><span class="key-label">PAUSE</span></button>
+                                </div>
+                                
+                                <div class="deck-fader-container">
+                                    <button class="btn-ctrl btn-mute" id="btn-mute" title="Mutar">
+                                        <i class="fa-solid fa-volume-high" id="mute-icon"></i>
+                                    </button>
+                                    <input type="range" min="0" max="100" value="80" class="volume-slider" id="volume-slider" title="Volume">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Features Section -->
+                <section class="features-grid" id="about-detail">
+                    <div class="feature-card">
+                        <div class="feat-icon"><i class="fa-solid fa-hand-holding-hand"></i></div>
+                        <h3>Direto para os Criadores</h3>
+                        <p>Nossa plataforma foi desenhada para apoiar o artista de forma transparente, permitindo receber apoio direto por meio de licenças livres e canais de financiamento comunitário.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feat-icon"><i class="fa-solid fa-server"></i></div>
+                        <h3>Tecnologia Livre</h3>
+                        <p>Usamos o AzuraCast para processar o streaming, garantindo que toda a pilha tecnológica seja auto-hospedável, autônoma e sob nosso controle.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feat-icon"><i class="fa-solid fa-network-wired"></i></div>
+                        <h3>Rede Descentralizada</h3>
+                        <p>Buscamos integrar nossa rádio com redes de distribuição distribuídas, facilitando o armazenamento e compartilhamento de áudio via IPFS no futuro.</p>
+                    </div>
+                </section>
+            </section>
+
+
+            <!-- RADIO TAB -->
+            <section id="radio-tab" class="tab-content">
+                <div class="tab-header">
+                    <h2>Nossa Sintonia</h2>
+                    <p>Veja os detalhes de transmissão, horários e converse ao vivo com outros ouvintes.</p>
+                </div>
+
+                <div class="radio-layout">
+                    <!-- Schedule and Stream Links -->
+                    <div class="radio-details-col">
+                        <div class="card bg-glass">
+                            <h3>Grade de Programação</h3>
+                            <div class="schedule-list">
+                                <div class="schedule-item current">
+                                    <div class="time">00:00 - 23:59</div>
+                                    <div class="info">
+                                        <h4>AutoDJ Independente</h4>
+                                        <p>Seleção contínua de sons licenciados sob Creative Commons e faixas de artistas do hub.</p>
+                                    </div>
+                                    <span class="badge badge-live">No Ar</span>
+                                </div>
+                                <div class="schedule-item">
+                                    <div class="time">Sáb & Dom - 18:00</div>
+                                    <div class="info">
+                                        <h4>Live Session / DJ Set</h4>
+                                        <p>Transmissões ao vivo diretamente dos estúdios dos nossos artistas associados.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card bg-glass margin-top">
+                            <h3>Links de Conexão Direta</h3>
+                            <p class="text-muted text-sm">Use o seu player favorito (VLC, Winamp, iTunes) para escutar a rádio diretamente:</p>
+                            <div class="stream-links-grid">
+                                <div class="stream-link-box">
+                                    <span>Stream MP3 (Alta Qualidade)</span>
+                                    <button class="btn btn-sm btn-secondary copy-link-btn" data-url="https://demo.azuracast.com/radio/8000/radio.mp3">
+                                        <i class="fa-regular fa-copy"></i> Copiar
+                                    </button>
+                                </div>
+                                <div class="stream-link-box">
+                                    <span>Playlist PLS</span>
+                                    <button class="btn btn-sm btn-secondary copy-link-btn" data-url="https://demo.azuracast.com/listen/independent/radio.pls">
+                                        <i class="fa-regular fa-copy"></i> Copiar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Chat Demonstration -->
+                    <div class="chat-col">
+                        <div class="card bg-glass chat-card">
+                            <div class="chat-header">
+                                <h3>Mural da Comunidade</h3>
+                                <span class="chat-online-count"><i class="fa-solid fa-circle"></i> Chat Ativo</span>
+                            </div>
+                            <div class="chat-messages" id="chat-messages-container">
+                                <!-- Messages will render here -->
+                                <div class="chat-msg system">
+                                    <p>Bem-vindo ao mural de ouvintes! Digite seu apelido e participe da conversa.</p>
+                                </div>
+                            </div>
+                            <form class="chat-input-area" id="chat-form">
+                                <input type="text" placeholder="Seu apelido..." id="chat-nickname" maxlength="15" required class="input-nickname">
+                                <input type="text" placeholder="Digite uma mensagem..." id="chat-text" maxlength="100" required class="input-message">
+                                <button type="submit" class="btn btn-primary btn-icon" id="btn-send-chat" title="Enviar Mensagem">
+                                    <i class="fa-regular fa-paper-plane"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- MANUAL TAB -->
+            <section id="manual-tab" class="tab-content">
+                <div class="tab-header">
+                    <h2>Manual do Artista</h2>
+                    <p>Saiba como transmitir ao vivo, enviar suas faixas e entender as diretrizes do Hub Descentralizado.</p>
+                </div>
+                                <div class="manual-layout">
+                    <!-- Manual Navigation / Sidebar -->
+                    <aside class="manual-nav">
+                        <div class="card bg-glass nav-sticky">
+                            <h3>Tópicos do Guia</h3>
+                            <ul class="manual-menu">
+                                <li><a href="#manual-intro" class="active">1. Introdução ao Hub</a></li>
+                                <li><a href="#manual-autodj">2. Enviando Músicas (AutoDJ)</a></li>
+                                <li><a href="#manual-live">3. Como Transmitir Ao Vivo</a></li>
+                                <li><a href="#manual-configs">4. Dados de Configuração</a></li>
+                                <li><a href="#manual-decentralization">5. O Hub Descentralizado</a></li>
+                                <li><a href="#manual-submit">6. Enviar Música</a></li>
+                                <li><a href="#manual-import-url">7. Importar por URL</a></li>
+                            </ul>
+                        </div>
+                    </aside>
+
+                    <!-- Manual Content -->
+                    <article class="manual-body">
+                        <!-- Section 1 -->
+                        <section class="manual-section card bg-glass" id="manual-intro">
+                            <h3>1. Introdução ao Hub de Artistas</h3>
+                            <p>A Radio criAtiva é o ponto de partida do nosso ecossistema de divulgação de arte independente. Nosso propósito é criar um canal onde a arte sonora, literária e experimental flua livremente.</p>
+                            <p>Artistas participantes recebem um espaço autônomo, suporte de rede de streaming de alta qualidade (AzuraCast) e a oportunidade de fazer curadoria coletiva da nossa grade.</p>
+                            <blockquote>
+                                <i class="fa-solid fa-quote-left"></i>
+                                Promovemos a cultura livre, o compartilhamento justo e o fortalecimento de redes locais.
+                            </blockquote>
+                        </section>
+
+                        <!-- Section 2 -->
+                        <section class="manual-section card bg-glass margin-top" id="manual-autodj">
+                            <h3>2. Enviando Suas Músicas (AutoDJ)</h3>
+                            <p>O AutoDJ garante que a nossa rádio nunca fique em silêncio. Para integrar suas músicas à nossa rotação automática de faixas:</p>
+                            <ol class="step-list">
+                                <li>
+                                    <strong>Formato de Arquivo</strong>: Suas faixas devem estar preferencialmente no formato <strong>MP3 (320kbps)</strong> ou <strong>AAC (192kbps ou superior)</strong>.
+                                </li>
+                                <li>
+                                    <strong>Metadados (Tags ID3)</strong>: Certifique-se de que os arquivos de áudio estejam corretamente tagueados com <em>Título da Música</em>, <em>Nome do Artista</em> e opcionalmente a <em>Capa do Álbum</em>. Isso garante que o nosso player exiba as informações corretamente para os ouvintes.
+                                </li>
+                                <li>
+                                    <strong>Envio</strong>: No momento, os envios podem ser solicitados entrando em contato com a equipe de curadoria por e-mail ou no nosso servidor de bate-papo, enviando um link do Bandcamp, SoundCloud ou IPFS. Em breve, haverá um painel de upload direto para artistas autenticados.
+                                </li>
+                            </ol>
+                        </section>
+
+                        <!-- Section 3 -->
+                        <section class="manual-section card bg-glass margin-top" id="manual-live">
+                            <h3>3. Como Transmitir Ao Vivo</h3>
+                            <p>Artistas cadastrados podem assumir a transmissão da rádio a qualquer momento em seus horários agendados. O AzuraCast fará a transição suave do AutoDJ para a sua transmissão ao vivo de forma automática e transparente.</p>
+                            
+                            <h4>A. Transmitindo com o software BUTT (Recomendado pela simplicidade)</h4>
+                            <p>O <strong>Butt (Broadcast Using This Tool)</strong> é uma ferramenta gratuita e de código aberto compatível com Windows, Mac e Linux.</p>
+                            <div class="steps-details">
+                                <ol>
+                                    <li>Baixe e instale o <a href="https://danielnoethen.de/butt/" target="_blank" rel="noopener">Butt</a>.</li>
+                                    <li>Abra o aplicativo e clique em <strong>Settings</strong> (Configurações) -> <strong>Add</strong> (Adicionar Servidor).</li>
+                                    <li>Selecione o tipo de servidor como <strong>Icecast</strong> (ou Shoutcast, conforme dados fornecidos).</li>
+                                    <li>Preencha os campos com as credenciais que você recebeu da nossa administração (veja a seção seguinte).</li>
+                                    <li>Clique em <strong>Save</strong>. De volta à tela principal do Butt, selecione seu dispositivo de entrada de áudio e clique no botão de <strong>Play (Conectar)</strong>.</li>
+                                </ol>
+                            </div>
+
+                            <h4>B. Transmitindo com o MIXXX (Para DJs e Programas Complexos)</h4>
+                            <p>O <strong>Mixxx</strong> é uma ferramenta profissional de DJ com suporte integrado a streaming.</p>
+                            <div class="steps-details">
+                                <ol>
+                                    <li>Abra as preferências do Mixxx (`Ctrl + P` ou `Cmd + ,`).</li>
+                                    <li>Vá para a seção <strong>Live Broadcasting</strong> (Transmissão ao Vivo).</li>
+                                    <li>Marque "Enable Live Broadcasting". Selecione o tipo de servidor **Icecast 2**.</li>
+                                    <li>Insira o Host, Porta, Ponto de Montagem (Mount), Login e Senha fornecidos.</li>
+                                    <li>Feche as preferências e toque suas músicas. O áudio de saída do seu Mixxx irá diretamente para a rádio.</li>
+                                </ol>
+                            </div>
+                        </section>
+
+                        <!-- Section 4 -->
+                        <section class="manual-section card bg-glass margin-top" id="manual-configs">
+                            <h3>4. Dados de Configuração Padrão (Modelo)</h3>
+                            <p>Use os seguintes dados em seu software de transmissão. Seus dados de login individuais serão gerados pela equipe da rádio.</p>
+                            <div class="table-responsive">
+                                <table class="config-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Campo no Software</th>
+                                            <th>Valor de Exemplo</th>
+                                            <th>Descrição</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Server Type</strong> (Tipo)</td>
+                                            <td><code>Icecast v2</code></td>
+                                            <td>Protocolo de transmissão da rádio.</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Server Address / Host</strong></td>
+                                            <td><code>stream.meuhub.com</code></td>
+                                            <td>O endereço IP ou Domínio da VPS da rádio.</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Port</strong> (Porta)</td>
+                                            <td><code>8000</code></td>
+                                            <td>A porta configurada no seu AzuraCast.</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Mount Point</strong> (Montagem)</td>
+                                            <td><code>/live</code></td>
+                                            <td>Caminho onde a transmissão se conecta.</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Username</strong> (Usuário)</td>
+                                            <td><code>dj_artista</code></td>
+                                            <td>Seu nome de usuário cadastrado no painel.</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Password</strong> (Senha)</td>
+                                            <td><code>sua_senha_secreta</code></td>
+                                            <td>A senha gerada para a sua conta de DJ.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="alert alert-info">
+                                <i class="fa-solid fa-circle-info"></i>
+                                <strong>Dica de Segurança:</strong> Nunca compartilhe seus dados de DJ. Qualquer pessoa com estes dados pode interromper a transmissão principal da rádio.
+                            </div>
+                        </section>
+
+                        <!-- Section 5 -->
+                        <section class="manual-section card bg-glass margin-top" id="manual-decentralization">
+                            <h3>5. A Visão do Hub Descentralizado</h3>
+                            <p>Nosso objetivo final é migrar este portal para uma rede federada e descentralizada. Isso significa que:</p>
+                            <ul>
+                                <li><strong>Hospedagem Distribuída</strong>: Os arquivos de música de cada artista parceiro serão armazenados no IPFS (sistema de arquivos P2P), impedindo a censura e garantindo que o catálogo pertença verdadeiramente aos seus criadores.</li>
+                                <li><strong>Modelos de Licenciamento Flexíveis</strong>: Incentivamos o uso de licenças Creative Commons, permitindo que o público ouça, compartilhe e remisture os trabalhos de forma justa.</li>
+                                <li><strong>Gorjetas e Apoio Web3</strong>: Futuramente integraremos carteiras digitais (ex: MetaMask ou redes Lightning de Bitcoin) para que os ouvintes possam enviar gorjetas diretamente para o artista que está tocando no momento com apenas um clique.</li>
+                            </ul>
+                        </section>
+
+                        <!-- Section 6 -->
+                        <section class="manual-section card bg-glass margin-top" id="manual-submit">
+                            <h3>6. Enviar Música (Portal de Submissão)</h3>
+                            <p>Artistas independentes podem submeter suas obras diretamente para a nossa rádio. Seu áudio será processado, armazenado no IPFS e adicionado à playlist de curadoria coletiva.</p>
+                            
+                            <form class="submit-music-form" id="music-upload-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="artist-name">Nome do Artista / Banda</label>
+                                        <input type="text" id="artist-name" placeholder="Ex: Ana Terra" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="track-name">Título da Faixa</label>
+                                        <input type="text" id="track-name" placeholder="Ex: Som do Vento" required>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="track-license-select">Licença Creative Commons</label>
+                                        <select id="track-license-select" required>
+                                            <option value="CC-BY">CC BY (Atribuição)</option>
+                                            <option value="CC-BY-NC" selected>CC BY-NC (Atribuição - Não Comercial)</option>
+                                            <option value="CC-BY-SA">CC BY-SA (Atribuição - Compartilha Igual)</option>
+                                            <option value="CC-BY-NC-ND">CC BY-NC-ND (Atribuição - Não Comercial - Sem Derivações)</option>
+                                            <option value="CC-0">Domínio Público (CC0)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="artist-wallet">Carteira Web3 (Para gorjetas/apoio)</label>
+                                        <input type="text" id="artist-wallet" placeholder="Ex: 0x71C... ou carteira lightning">
+                                    </div>
+                                </div>
+                                <div class="form-group margin-top-sm">
+                                    <label>Arquivo de Áudio (.mp3 / .aac)</label>
+                                    <div class="drag-drop-area" id="drag-drop-zone">
+                                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                                        <p>Arraste e solte o áudio aqui ou clique para selecionar</p>
+                                        <span class="file-info-text" id="file-info-label">Nenhum arquivo selecionado (Limite: 25MB)</span>
+                                        <input type="file" id="audio-file-input" accept="audio/mp3, audio/mpeg, audio/aac, audio/ogg" class="hidden-input">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-full margin-top-sm" id="btn-submit-track">
+                                    <i class="fa-solid fa-paper-plane"></i> Publicar no Hub Descentralizado
+                                </button>
+                            </form>
+                            
+                            <!-- Success message container (Hidden by default) -->
+                            <div class="submit-success-box hidden" id="submit-success-box">
+                                <div class="success-icon"><i class="fa-solid fa-circle-check"></i></div>
+                                <h4>Música Enviada com Sucesso!</h4>
+                                <p>Sua faixa foi processada e registrada no Hub Descentralizado:</p>
+                                <div class="success-details">
+                                    <p><strong>Hash IPFS (CID)</strong>: <code id="result-ipfs-cid">QmYwAPzwh35EDiWkqq12RPBLnCBXimGicMcokXy8k27s31</code></p>
+                                    <p><strong>Transação Blockchain</strong>: <code id="result-tx-hash">0x71c54b67945d8b8a78620780280457662d8b8576e33604f2d71bf12d4d957e8d</code></p>
+                                    <p><strong>Status da Curadoria</strong>: <span class="badge badge-accent">Aguardando Votação</span></p>
+                                </div>
+                                <button type="button" class="btn btn-secondary btn-sm" id="btn-submit-another" style="margin-top: 15px;">
+                                    <i class="fa-solid fa-rotate-left"></i> Enviar Outra
+                                </button>
+                            </div>
+                        </section>
+
+                        <!-- Section 7 -->
+                        <section class="manual-section card bg-glass margin-top" id="manual-import-url">
+                            <h3>7. Importar por URL (YouTube / Playlist)</h3>
+                            <p>Adicione músicas ou playlists inteiras do YouTube diretamente ao servidor da Radio criAtiva colando o link no campo abaixo. O servidor local fará o download e a indexação automática no AzuraCast.</p>
+                            
+                            <form class="submit-music-form" id="url-import-form">
+                                <div class="form-group">
+                                    <label for="import-url-input">Link do Vídeo ou Playlist do YouTube</label>
+                                    <input type="url" id="import-url-input" placeholder="Ex: https://www.youtube.com/watch?v=... ou link de playlist" required style="width: 100%; box-sizing: border-box;">
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-full margin-top-sm" id="btn-submit-import">
+                                    <i class="fa-solid fa-cloud-arrow-down"></i> Iniciar Importação
+                                </button>
+                            </form>
+                            
+                            <!-- Success/Loading Feedback for URL Import -->
+                            <div class="submit-success-box hidden" id="import-status-box" style="margin-top: 20px;">
+                                <div class="status-loading-spinner text-center" id="import-spinner">
+                                    <i class="fa-solid fa-compact-disc fa-spin animate-pulse" style="font-size: 2.5rem; color: var(--accent-blue);"></i>
+                                    <h4 class="margin-top-sm">Baixando e Processando Mídia...</h4>
+                                    <p class="text-sm text-muted">Aguarde. Isso pode levar de alguns segundos a minutos dependendo do tamanho da playlist.</p>
+                                </div>
+                                <div class="status-success-details hidden" id="import-success-details">
+                                    <div class="success-icon" style="color:var(--accent-green)"><i class="fa-solid fa-circle-check"></i></div>
+                                    <h4>Importação Concluída!</h4>
+                                    <p id="import-success-msg" style="color:var(--text-muted); font-size:0.95rem; margin-bottom: 15px;"></p>
+                                    <button type="button" class="btn btn-secondary btn-sm" id="btn-reset-import">Importar Outra</button>
+                                </div>
+                                <div class="status-error-details hidden" id="import-error-details">
+                                    <div class="error-icon" style="color:var(--accent-pink)"><i class="fa-solid fa-circle-xmark"></i></div>
+                                    <h4>Falha na Importação</h4>
+                                    <p id="import-error-msg" style="color:var(--text-muted); font-size:0.95rem; margin-bottom: 15px;"></p>
+                                    <button type="button" class="btn btn-secondary btn-sm" id="btn-retry-import">Tentar Novamente</button>
+                                </div>
+                            </div>
+                        </section>
+                    </article>
+                </div>
+            </section>
+
+            <!-- TRANSMITIR TAB -->
+            <section id="transmitir-tab" class="tab-content">
+                <div class="tab-header">
+                    <h2><i class="fa-solid fa-tower-broadcast animate-pulse"></i> Como Fazer Sua Primeira Transmissão</h2>
+                    <p>Siga este guia prático e comece a transmitir ao vivo para a Radio criAtiva em poucos minutos.</p>
+                </div>
+
+                <div class="radio-layout">
+                    <!-- Steps column -->
+                    <div class="radio-details-col" style="flex: 2;">
+                        <!-- Passo 1 -->
+                        <div class="card bg-glass">
+                            <h3><span class="badge badge-accent" style="font-size: 0.95rem; padding: 4px 10px;">Passo 1</span> Criar suas credenciais de DJ</h3>
+                            <p class="margin-top-sm">Antes de iniciar, você precisa de uma conta de DJ criada no nosso servidor administrativo.</p>
+                            <ul class="manual-list margin-top-sm" style="padding-left: 20px;">
+                                <li>Acesse o <strong><a href="http://localhost" target="_blank" class="btn-dashboard-link">Dashboard Administrativo</a></strong>.</li>
+                                <li>No menu da estação, acesse <strong>Gerenciar Estação</strong> -> <strong>Contas de Transmissão (DJs)</strong>.</li>
+                                <li>Clique em <strong>Adicionar DJ</strong>, defina um nome de usuário, uma senha forte e salve as alterações.</li>
+                                <li>Certifique-se de que a opção de permitir transmissões ao vivo esteja ativa no painel.</li>
+                            </ul>
+                        </div>
+
+                        <!-- Passo 2 -->
+                        <div class="card bg-glass margin-top">
+                            <h3><span class="badge badge-accent" style="font-size: 0.95rem; padding: 4px 10px;">Passo 2</span> Instalar um Software de Transmissão</h3>
+                            <p class="margin-top-sm">Você precisará de um programa (encoder) para capturar o áudio do seu microfone ou do seu computador e enviá-lo ao nosso servidor.</p>
+                            <div class="software-cards margin-top-sm" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
+                                <div class="card" style="margin-bottom: 0; background: rgba(0,0,0,0.25) !important; border: 1px solid var(--glass-border);">
+                                    <h4>BUTT (Simples)</h4>
+                                    <p class="text-muted text-sm margin-top-xs">Ideal para transmissões de voz simples, podcasts ou para tocar o áudio geral do seu computador (Spotify, tocadores locais).</p>
+                                    <a href="https://danielnoethen.de/butt/" target="_blank" class="btn btn-sm btn-secondary margin-top-sm" style="display:inline-flex; width:fit-content; text-decoration:none;"><i class="fa-solid fa-download"></i> Baixar BUTT</a>
+                                </div>
+                                <div class="card" style="margin-bottom: 0; background: rgba(0,0,0,0.25) !important; border: 1px solid var(--glass-border);">
+                                    <h4>Mixxx (Profissional)</h4>
+                                    <p class="text-muted text-sm margin-top-xs">Completo para DJs. Permite mixar faixas, usar efeitos, múltiplos microfones e controlar decks físicos.</p>
+                                    <a href="https://mixxx.org/download/" target="_blank" class="btn btn-sm btn-secondary margin-top-sm" style="display:inline-flex; width:fit-content; text-decoration:none;"><i class="fa-solid fa-download"></i> Baixar Mixxx</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Passo 3 -->
+                        <div class="card bg-glass margin-top">
+                            <h3><span class="badge badge-accent" style="font-size: 0.95rem; padding: 4px 10px;">Passo 3</span> Configurar o Servidor</h3>
+                            <p class="margin-top-sm">Configurar os dados de conexão do Icecast no software que você instalou:</p>
+                            
+                            <h4 class="margin-top-sm" style="color:var(--accent-pink); font-size:1rem; text-transform:none;"><i class="fa-solid fa-square-poll-vertical"></i> Opção A: Configurar no BUTT</h4>
+                            <ul class="manual-list margin-top-xs" style="padding-left: 20px;">
+                                <li>Clique em <strong>Settings</strong> e depois em <strong>ADD</strong> na lista de servidores (Server).</li>
+                                <li>Selecione o tipo de servidor: <strong>IceCast2</strong>.</li>
+                                <li>Preencha os campos de conexão conforme o box abaixo e salve.</li>
+                            </ul>
+
+                            <h4 class="margin-top-md" style="color:var(--accent-blue); font-size:1rem; text-transform:none;"><i class="fa-solid fa-sliders"></i> Opção B: Configurar no Mixxx</h4>
+                            <ul class="manual-list margin-top-xs" style="padding-left: 20px;">
+                                <li>Abra o Mixxx e vá em <strong>Options (Opções)</strong> -> <strong>Preferences (Preferências)</strong> (ou use o atalho <code>Ctrl + P</code>).</li>
+                                <li>No menu lateral esquerdo, clique em <strong>Live Broadcasting (Transmissão ao Vivo)</strong>.</li>
+                                <li>Marque a caixa <strong>Enable Live Broadcasting (Ativar Transmissão ao Vivo)</strong> no topo.</li>
+                                <li>Selecione o tipo de servidor (Type): <strong>Icecast 2</strong>.</li>
+                                <li>Preencha os campos de conexão conforme o box abaixo e clique em <strong>OK</strong> para salvar.</li>
+                            </ul>
+
+                            <!-- Box de Dados de Conexão comum -->
+                            <div class="card" style="background: #000 !important; font-family: monospace; font-size: 0.85rem; color: #39ff14; margin-top: 15px; padding: 12px; border: 2px solid var(--accent-blue); text-align: left; text-transform: none;">
+                                <div style="font-weight: bold; border-bottom: 1px dashed rgba(57, 255, 20, 0.2); padding-bottom: 5px; margin-bottom: 5px; color:#ffffff;">DADOS DE CONEXÃO DA RADIO CRIATIVA</div>
+                                <div><strong>Type (Tipo de Servidor)</strong>: Icecast 2</div>
+                                <div><strong>Address (Host / IP)</strong>: <span class="server-ip-placeholder" style="font-family:monospace; font-weight:bold; color:var(--accent-blue)">localhost</span></div>
+                                <div><strong>Port (Porta)</strong>: 8005</div>
+                                <div><strong>Mount Name (Ponto de Montagem)</strong>: /radio.mp3</div>
+                                <div><strong>Username / Login (Usuário)</strong>: <strong style="color:var(--accent-pink)">source</strong> (digite exatamente a palavra "source")</div>
+                                <div><strong>Password (Senha)</strong>: <strong style="color:var(--accent-pink)">nome_do_dj:senha_do_dj</strong> (o nome do DJ criado, dois pontos, e a senha. Ex: <code style="color:#39ff14">horyuarthur:suasenha</code>)</div>
+                            </div>
+                        </div>
+
+                        <!-- Passo 4 -->
+                        <div class="card bg-glass margin-top">
+                            <h3><span class="badge badge-accent" style="font-size: 0.95rem; padding: 4px 10px;">Passo 4</span> Iniciar a Transmissão ao Vivo</h3>
+                            <p class="margin-top-sm">Agora tudo está pronto para você entrar no ar!</p>
+                            <ul class="manual-list margin-top-sm" style="padding-left: 20px;">
+                                <li><strong>Se estiver usando BUTT</strong>: No painel principal, selecione o microfone ou placa em <em>Audio Device</em> e clique no botão **Play (►)**.</li>
+                                <li><strong>Se estiver usando Mixxx</strong>: No painel principal do Mixxx, clique no ícone de antena (Live Broadcasting) no menu do topo ou use o atalho **<code>Ctrl + L</code>** (ou <code>Cmd + L</code> no Mac). O programa indicará que está conectado.</li>
+                                <li><strong>No Ar</strong>: O servidor fará a transição (crossfade) da música do AutoDJ para a sua voz/mixagem ao vivo instantaneamente!</li>
+                                <li><strong>Para Encerrar</strong>: Desconecte no software (botão **Stop (■)** no BUTT ou `Ctrl+L` no Mixxx) e o AutoDJ assumirá de volta o sinal no mesmo segundo.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar Tips -->
+                    <aside class="radio-chat-col" style="flex: 1;">
+                        <div class="card bg-glass">
+                            <h4><i class="fa-solid fa-circle-info" style="color:var(--accent-blue)"></i> Dicas de Ouro</h4>
+                            <ul class="manual-list margin-top-sm" style="padding-left: 15px; font-size: 0.9rem; list-style-type: square;">
+                                <li style="margin-bottom: 8px;"><strong>Teste de Conexão</strong>: Faça uma transmissão de teste antes de anunciar o horário do seu programa.</li>
+                                <li style="margin-bottom: 8px;"><strong>Qualidade de Áudio</strong>: Recomendamos configurar o bitrate de saída em **128 kbps ou 192 kbps (Stereo)** no formato MP3 ou AAC nas configurações do encoder.</li>
+                                <li style="margin-bottom: 8px;"><strong>Direitos de Áudio</strong>: Dê preferência para tocar faixas livres, CC (Creative Commons) ou de artistas do Hub para apoiar a comunidade!</li>
+                            </ul>
+                        </div>
+
+                        <div class="card bg-glass margin-top">
+                            <h4><i class="fa-solid fa-gauge" style="color:var(--accent-pink)"></i> Acesso Rápido</h4>
+                            <p class="text-muted text-sm margin-top-sm">Você pode gerenciar as contas de DJs e ver o status de conexões ativas diretamente no painel administrativo:</p>
+                            <a href="http://localhost" target="_blank" class="btn btn-primary btn-full margin-top-sm btn-dashboard-link" style="text-decoration:none;">
+                                <i class="fa-solid fa-gauge-high"></i> Abrir Dashboard
+                            </a>
+                        </div>
+                    </aside>
+                </div>
+            </section>
+        </main>
+
+        <!-- Global Audio Player (Hidden element controlled by JS) -->
+        <audio id="audio-stream" preload="none" crossorigin="anonymous"></audio>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <div class="footer-content">
+                <div class="footer-left">
+                    <p>&copy; 2026 Radio criAtiva. Feito com amor e código aberto.</p>
+                    <p class="footer-sub">Alimentado por <a href="https://github.com/AzuraCast/AzuraCast" target="_blank" rel="noopener">AzuraCast</a> & Docker.</p>
+                </div>
+                <div class="footer-right">
+                    <a href="REQUISITOS.md" class="footer-link" target="_blank"><i class="fa-solid fa-file-code"></i> Ver Requisitos de Instalação (Markdown)</a>
+                    <div class="social-icons">
+                        <a href="#" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="#" title="GitHub"><i class="fa-brands fa-github"></i></a>
+                        <a href="#" title="Discord"><i class="fa-brands fa-discord"></i></a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Custom JS -->
+    <script src="index.js"></script>
+</body>
+</html>

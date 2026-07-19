@@ -1,0 +1,13 @@
+# Agent configurations
+.agents/
+
+# Python cache / virtualenv
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+
+# OS files
+.DS_Store
+Thumbs.db
