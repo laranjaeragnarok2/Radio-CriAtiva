@@ -196,7 +196,7 @@ function togglePlay() {
         audio.play()
             .then(() => {
                 isPlaying = true;
-                playIcon.className = 'fa-solid fa-pause';
+                if (playIcon) playIcon.className = 'fa-solid fa-pause';
                 btnPlayPause.title = 'Pausar';
                 artworkWrapper.classList.add('playing');
                 streamIndicator.className = 'live-indicator online';
@@ -216,7 +216,7 @@ function togglePlay() {
         audio.load();
         
         isPlaying = false;
-        playIcon.className = 'fa-solid fa-play';
+        if (playIcon) playIcon.className = 'fa-solid fa-play';
         btnPlayPause.title = 'Reproduzir';
         artworkWrapper.classList.remove('playing');
         streamIndicator.className = 'live-indicator offline';
