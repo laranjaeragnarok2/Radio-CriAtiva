@@ -372,50 +372,61 @@ function drawLEDColumn(ctx, x, y, width, height) {
     }
 }
 
-// --- 4. POLLING DE METADADOS DA RÁDIO (NOW PLAYING) ---
-// Quando tiver a URL oficial do AzuraCast, descomente a função real abaixo e apague a simulação.
-/*
 function fetchNowPlaying() {
     fetch(API_URL)
         .then(response => response.json())
         .then(data => {
-            // Exemplo da estrutura JSON padrão do AzuraCast
             const song = data.now_playing.song;
             trackTitleEl.innerText = song.title;
             trackArtistEl.innerText = song.artist;
+            
             if (song.art) {
-                albumArtEl.src = song.art;
+                let artUrl = song.art;
+                // Ajustar URL da imagem caso acesse de outro dispositivo local
+                if (artUrl.includes('//localhost')) {
+                    artUrl = artUrl.replace('//localhost', `//${HOSTNAME}`);
+                }
+                albumArtEl.src = artUrl;
             }
-            listenerCountEl.innerHTML = `<i class="fa-solid fa-headphones"></i> ${data.listeners.unique} ouvintes`;
+            
+            // Badges Web3 / IPFS dinâmicas (se houver no AzuraCast, senão limpa ou simula)
+            if (trackIpfsCidEl) {
+                trackIpfsCidEl.innerText = song.custom_fields?.ipfs || "QmT78z5x5S1N8VjEDiWk...bBLnCBXimGi";
+            }
+            if (trackLicenseEl) {
+                trackLicenseEl.innerText = song.custom_fields?.license || "CC BY-NC-SA 4.0";
+            }
+            
+            // Ouvintes reais
+            const uniqueListeners = data.listeners.unique || 0;
+            listenerCountEl.innerHTML = `<i class="fa-solid fa-headphones"></i> ${uniqueListeners} ouvintes`;
         })
-        .catch(err => console.error("Erro ao buscar metadados do AzuraCast:", err));
+        .catch(err => {
+            console.warn("Erro ao buscar metadados do AzuraCast (usando simulação como fallback):", err);
+            // Se falhar a API (ex: sem rede), roda o fallback da simulação
+            runMockMetadata();
+        });
 }
-setInterval(fetchNowPlaying, 15000); // Roda a cada 15 segundos
-*/
 
-// SIMULAÇÃO de Metadados Rodando no AutoDJ (Para demonstração visual)
+// Iniciar a busca de metadados reais a cada 5 segundos
+fetchNowPlaying();
+setInterval(fetchNowPlaying, 5000);
+
+// SIMULAÇÃO de Metadados Rodando no AutoDJ (Para demonstração visual como fallback)
 function runMockMetadata() {
-    // Escolhe uma faixa da lista mockada
     const track = mockTracks[currentMockIndex];
     trackTitleEl.innerText = track.title;
     trackArtistEl.innerText = track.artist;
     albumArtEl.src = track.art;
     
-    // Atualizar badges descentralizadas
     if (trackIpfsCidEl) trackIpfsCidEl.innerText = track.ipfs;
     if (trackLicenseEl) trackLicenseEl.innerText = track.license;
     
-    // Simular número aleatório de ouvintes
     const randomListeners = Math.floor(Math.random() * 25) + 5;
     listenerCountEl.innerHTML = `<i class="fa-solid fa-headphones"></i> ${randomListeners} ouvintes`;
     
-    // Avançar índice
     currentMockIndex = (currentMockIndex + 1) % mockTracks.length;
 }
-
-// Iniciar simulação e rodar a cada 20 segundos
-runMockMetadata();
-setInterval(runMockMetadata, 20000);
 
 // --- 5. CHAT / MURAL DA COMUNIDADE (SIMULADOR INTERATIVO) ---
 const botReplies = [
