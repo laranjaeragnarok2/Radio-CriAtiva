@@ -1,23 +1,23 @@
-/* index.css - Retro 90s Tech Design System */
+/* index.css - Authentic Vaporwave & Retro-Cassette Design System */
 
 /* CSS Variables */
 :root {
-    --bg-primary: #0a0813; /* Deep analog purple-black */
-    --bg-secondary: #161226; /* Dark plastic casing */
-    --accent-purple: #b026ff; /* Neon Purple */
-    --accent-pink: #ff007f; /* Hot Pink */
-    --accent-blue: #00f0ff; /* Vaporwave Cyan */
-    --accent-green: #39ff14; /* Matrix Neon Green */
-    --accent-yellow: #ffb700; /* Tuner Orange/Yellow */
+    --bg-primary: #0a0518; /* Deep VHS midnight purple */
+    --bg-secondary: #140d2b; /* Tape deck plastic console casing */
+    --accent-purple: #b967ff; /* Classic Vaporwave Purple */
+    --accent-pink: #ff71ce; /* Neon Pink */
+    --accent-blue: #01cdfe; /* Neon Cyan */
+    --accent-green: #05ffa1; /* Mint Green */
+    --accent-yellow: #fffb96; /* Neon Yellow/Orange */
     --text-main: #ffffff;
     --text-muted: #cbd5e1;
-    --text-dark: #685e8a;
-    --glass-bg: rgba(22, 18, 38, 0.85); /* Semi-opaque box */
-    --glass-bg-hover: rgba(255, 255, 255, 0.05);
-    --glass-border: #3b2d69;
-    --glass-shadow: 6px 6px 0px #000000; /* Hard 90s shadow */
-    --glow-purple: rgba(176, 38, 255, 0.4);
-    --glow-pink: rgba(255, 0, 127, 0.4);
+    --text-dark: #7a6e9f;
+    --glass-bg: rgba(20, 13, 43, 0.9); /* Solid retro dashboard card background */
+    --glass-bg-hover: rgba(255, 255, 255, 0.08);
+    --glass-border: #44327a; /* Neon outline borders */
+    --glass-shadow: 6px 6px 0px #000000; /* Flat solid drop shadows */
+    --glow-purple: rgba(185, 103, 255, 0.35);
+    --glow-pink: rgba(255, 113, 206, 0.35);
     --retro-border: 3px solid #000000;
 }
 
@@ -61,38 +61,61 @@ a:hover {
     color: var(--accent-purple);
 }
 
-/* Background Glow Effects */
-.bg-glow {
+/* Vaporwave Background Elements */
+.retro-grid {
     position: fixed;
-    border-radius: 50%;
-    filter: blur(120px);
-    z-index: -1;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-image: 
+        linear-gradient(var(--grid-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+    background-size: 50px 50px;
+    background-position: center;
+    z-index: -2;
     pointer-events: none;
-    opacity: 0.6;
+    transform: perspective(600px) rotateX(60deg) translateY(-30%);
+    transform-origin: top center;
+    opacity: 0.7;
+    animation: grid-scroll 24s linear infinite;
 }
 
-.bg-glow-1 {
-    width: 400px;
-    height: 400px;
-    background: radial-gradient(circle, var(--glow-purple) 0%, transparent 70%);
-    top: -50px;
-    right: -50px;
+@keyframes grid-scroll {
+    from { background-position: 0 0; }
+    to { background-position: 0 100%; }
 }
 
-.bg-glow-2 {
+.vaporwave-sun {
+    position: fixed;
+    bottom: -150px;
+    left: 50%;
+    transform: translateX(-50%);
     width: 500px;
     height: 500px;
-    background: radial-gradient(circle, var(--glow-pink) 0%, transparent 70%);
-    bottom: -100px;
-    left: -100px;
-}
-
-.bg-glow-3 {
-    width: 300px;
-    height: 300px;
-    background: radial-gradient(circle, rgba(6, 182, 212, 0.25) 0%, transparent 70%);
-    top: 40%;
-    left: 30%;
+    border-radius: 50%;
+    background: linear-gradient(to top, var(--accent-pink), var(--accent-yellow) 80%);
+    z-index: -3;
+    pointer-events: none;
+    opacity: 0.35;
+    filter: blur(10px);
+    /* Classic scanline bars cut out of the sun */
+    mask-image: linear-gradient(to bottom, 
+        rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, 
+        rgba(0,0,0,0) 72%, rgba(0,0,0,1) 74%, 
+        rgba(0,0,0,0) 76%, rgba(0,0,0,1) 78%,
+        rgba(0,0,0,0) 81%, rgba(0,0,0,1) 83%,
+        rgba(0,0,0,0) 86%, rgba(0,0,0,1) 88%,
+        rgba(0,0,0,0) 92%, rgba(0,0,0,1) 94%,
+        rgba(0,0,0,0) 100%);
+    -webkit-mask-image: linear-gradient(to bottom, 
+        rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, 
+        rgba(0,0,0,0) 72%, rgba(0,0,0,1) 74%, 
+        rgba(0,0,0,0) 76%, rgba(0,0,0,1) 78%,
+        rgba(0,0,0,0) 81%, rgba(0,0,0,1) 83%,
+        rgba(0,0,0,0) 86%, rgba(0,0,0,1) 88%,
+        rgba(0,0,0,0) 92%, rgba(0,0,0,1) 94%,
+        rgba(0,0,0,0) 100%);
 }
 
 /* Layout Container */
@@ -111,11 +134,11 @@ a:hover {
     justify-content: space-between;
     align-items: center;
     padding: 15px 25px;
-    border-radius: 20px;
+    border-radius: 8px; /* Boxy 90s console structure */
     background: var(--glass-bg);
     backdrop-filter: blur(12px);
-    border: 1px solid var(--glass-border);
-    box-shadow: var(--glass-shadow);
+    border: 3px solid #000000;
+    box-shadow: 6px 6px 0px #000000;
     margin-bottom: 30px;
     z-index: 100;
 }
@@ -130,22 +153,24 @@ a:hover {
     width: 45px;
     height: 45px;
     background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
-    border-radius: 12px;
+    border: 2.5px solid #000000;
+    border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
     font-size: 1.3rem;
-    box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
+    box-shadow: 3px 3px 0px #000000;
 }
 
 .logo-text h1 {
     font-size: 1.4rem;
     font-weight: 800;
     letter-spacing: 0.5px;
-    background: linear-gradient(to right, #ffffff, #e2e8f0);
+    background: linear-gradient(to right, var(--accent-pink), var(--accent-blue));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    text-shadow: 2px 2px 0px rgba(0,0,0,0.5);
 }
 
 .logo-text span {
@@ -168,27 +193,29 @@ a:hover {
     border: none;
     color: var(--text-muted);
     padding: 10px 18px;
-    border-radius: 10px;
+    border-radius: 4px;
     font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s ease;
     display: flex;
     align-items: center;
     gap: 8px;
+    border: 2.5px solid transparent;
 }
 
 .nav-btn:hover {
     color: var(--text-main);
     background: var(--glass-bg-hover);
+    border-color: var(--glass-border);
 }
 
 .nav-btn.active {
     color: white;
-    background: rgba(255, 255, 255, 0.08);
-    box-shadow: inset 0 1px 1px var(--glass-border);
-    border-bottom: 2px solid var(--accent-pink);
-    border-radius: 10px 10px 0 0;
+    background: var(--bg-primary);
+    border: 2.5px solid var(--accent-pink);
+    box-shadow: 3px 3px 0px #000000;
+    border-radius: 4px;
 }
 
 /* App Content Sections */
@@ -237,23 +264,23 @@ a:hover {
 
 .badge {
     padding: 6px 14px;
-    border-radius: 20px;
+    border-radius: 4px;
     font-size: 0.8rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
+    border: 2px solid #000000;
+    box-shadow: 2px 2px 0px #000000;
 }
 
 .badge-accent {
-    background: rgba(219, 39, 119, 0.15);
-    color: var(--accent-pink);
-    border: 1px solid rgba(219, 39, 119, 0.3);
+    background: var(--accent-pink);
+    color: #0b0716;
 }
 
 .badge-live {
-    background: rgba(239, 68, 68, 0.15);
-    color: #ef4444;
-    border: 1px solid rgba(239, 68, 68, 0.3);
+    background: var(--accent-blue);
+    color: #0b0716;
     animation: pulseRed 2.5s infinite;
 }
 
@@ -286,42 +313,56 @@ a:hover {
 /* Buttons */
 .btn {
     padding: 12px 26px;
-    border-radius: 12px;
+    border-radius: 4px; /* Boxy retro style */
     font-size: 0.95rem;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.15s ease;
     display: flex;
     align-items: center;
     gap: 8px;
-    border: none;
+    border: 2.5px solid #000000;
+    text-shadow: none;
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
-    color: white;
-    box-shadow: 0 4px 20px rgba(124, 58, 237, 0.35);
+    background: linear-gradient(135deg, var(--accent-pink), var(--accent-purple));
+    color: #0b0716; /* High contrast dark text */
+    box-shadow: 4px 4px 0px #000000;
 }
 
 .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 24px rgba(124, 58, 237, 0.5);
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px #000000;
+}
+
+.btn-primary:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px #000000;
 }
 
 .btn-secondary {
-    background: var(--glass-bg);
+    background: var(--bg-secondary);
     color: var(--text-main);
-    border: 1px solid var(--glass-border);
+    border: 2.5px solid var(--glass-border);
+    box-shadow: 4px 4px 0px #000000;
 }
 
 .btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.08);
-    transform: translateY(-2px);
+    background: var(--glass-bg-hover);
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px #000000;
+    border-color: var(--accent-blue);
+}
+
+.btn-secondary:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px #000000;
 }
 
 .btn-sm {
     padding: 7px 14px;
-    border-radius: 8px;
+    border-radius: 4px;
     font-size: 0.8rem;
 }
 
@@ -330,7 +371,7 @@ a:hover {
     height: 42px;
     padding: 0;
     justify-content: center;
-    border-radius: 10px;
+    border-radius: 4px;
 }
 
 /* CRT Scanline Overlay */
@@ -384,11 +425,11 @@ body::after {
 .player-card {
     width: 100%;
     max-width: 380px;
-    background: #1f1b35;
+    background: #241c44; /* Retro tape deck case */
     border: 4px solid #000000;
-    border-radius: 6px;
+    border-radius: 8px;
     padding: 24px;
-    box-shadow: 8px 8px 0px #000000;
+    box-shadow: 10px 10px 0px #000000; /* Solid flat 90s shadow */
     position: relative;
     overflow: hidden;
 }
@@ -400,7 +441,7 @@ body::after {
     left: -50%;
     width: 200%;
     height: 200%;
-    background: radial-gradient(circle, rgba(124, 58, 237, 0.08) 0%, transparent 60%);
+    background: radial-gradient(circle, rgba(255, 113, 206, 0.08) 0%, transparent 60%);
     pointer-events: none;
 }
 
@@ -430,9 +471,9 @@ body::after {
 }
 
 .live-indicator.online {
-    background: rgba(239, 68, 68, 0.15);
-    color: #ef4444;
-    border: 1px solid rgba(239, 68, 68, 0.2);
+    background: rgba(255, 113, 206, 0.15);
+    color: var(--accent-pink);
+    border: 1px solid rgba(255, 113, 206, 0.2);
 }
 
 .live-dot {
@@ -443,8 +484,8 @@ body::after {
 }
 
 .live-indicator.online .live-dot {
-    background-color: #ef4444;
-    box-shadow: 0 0 8px #ef4444;
+    background-color: var(--accent-pink);
+    box-shadow: 0 0 8px var(--accent-pink);
     animation: livePulse 1.5s infinite;
 }
 
@@ -464,7 +505,7 @@ body::after {
 
 /* --- 90s LCD Screen Styling --- */
 .player-lcd-screen {
-    background: #081a0e; /* Dark green matrix display */
+    background: #150821; /* Retro cyberpunk deep neon screen */
     border: 3px solid #000000;
     box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.9);
     padding: 14px;
@@ -492,10 +533,10 @@ body::after {
     align-items: center;
     font-family: 'VT323', monospace;
     font-size: 1.25rem;
-    color: var(--accent-green);
-    text-shadow: 0 0 4px var(--accent-green);
+    color: var(--accent-pink); /* Neon Pink */
+    text-shadow: 0 0 5px var(--accent-pink);
     margin-bottom: 8px;
-    border-bottom: 1px dashed rgba(57, 255, 20, 0.2);
+    border-bottom: 1px dashed rgba(255, 113, 206, 0.25);
     padding-bottom: 4px;
 }
 
@@ -523,8 +564,8 @@ body::after {
 .lcd-metadata {
     font-family: 'VT323', monospace;
     text-align: left;
-    color: var(--accent-green);
-    text-shadow: 0 0 4px var(--accent-green);
+    color: var(--accent-blue);
+    text-shadow: 0 0 5px var(--accent-blue);
 }
 
 .lcd-track-title {
@@ -547,7 +588,7 @@ body::after {
 
 /* --- 90s Cassette Tape Deck --- */
 .cassette-deck-container {
-    background: #25203d; /* Matte plastic casing */
+    background: #1b1236; /* Matte plastic casing */
     border: 3px solid #000000;
     border-radius: 6px;
     padding: 16px;
@@ -559,7 +600,7 @@ body::after {
 .cassette-shell {
     width: 100%;
     height: 165px;
-    background: linear-gradient(135deg, #2b273d, #1a162b);
+    background: linear-gradient(135deg, #2d1e4e, #140b2b);
     border: 4px solid #000;
     border-radius: 8px;
     position: relative;
@@ -604,16 +645,18 @@ body::after {
 }
 
 .cassette-label {
-    background: #f1f5f9;
+    background: var(--accent-pink);
     border: 2.5px solid #000;
     border-radius: 4px;
     padding: 6px 12px;
-    color: #12101b;
+    color: #0b0716; /* Deep dark text */
     text-align: center;
     font-family: 'VT323', monospace;
     position: relative;
     z-index: 5;
-    background-image: repeating-linear-gradient(0deg, transparent, transparent 10px, rgba(255, 0, 127, 0.05) 10px, rgba(255, 0, 127, 0.05) 12px), linear-gradient(180deg, #ffffff, #e2e8f0);
+    background-image: 
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.15) 8px, transparent 8px, transparent 10px),
+        linear-gradient(180deg, var(--accent-yellow), var(--accent-pink));
     margin: 10px 10px 0 10px;
 }
 
