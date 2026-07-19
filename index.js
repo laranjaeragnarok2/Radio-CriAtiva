@@ -1,8 +1,8 @@
 /* index.js - Aplicativo de Rádio e Hub de Artistas */
 
 // --- CONFIGURAÇÃO DA RÁDIO (Substitua pelas suas URLs do AzuraCast) ---
-const STREAM_URL = 'https://4372f1297fc296.lhr.life/listen/radio_criativa/radio.mp3'; // Stream segura via túnel localhost.run
-const API_URL = 'https://4372f1297fc296.lhr.life/api/nowplaying/1'; // API de metadados via túnel localhost.run
+const STREAM_URL = 'https://ninety-goats-doubt.loca.lt/listen/radio_criativa/radio.mp3'; // Stream segura via localtunnel
+const API_URL = 'https://ninety-goats-doubt.loca.lt/api/nowplaying/1'; // API de metadados via localtunnel
 
 // --- ELEMENTOS DO DOM ---
 const audio = document.getElementById('audio-stream');
