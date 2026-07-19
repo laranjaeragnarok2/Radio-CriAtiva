@@ -265,23 +265,16 @@ function handleVolumeSlider() {
 
 // --- 3. AUDIO WEB API & VISUALIZADOR ---
 function initAudioContext() {
+    // Forçar o uso do visualizador procedural para evitar bloqueios de CORS / Brave Shields
+    useProceduralVisualizer = true;
+    
     if (audioContext) return; // Já inicializado
     
     try {
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
         audioContext = new AudioContextClass();
-        analyser = audioContext.createAnalyser();
-        analyser.fftSize = 128; // Tamanho ideal para visualizações rápidas
-        bufferLength = analyser.frequencyBinCount;
-        dataArray = new Uint8Array(bufferLength);
-        
-        // Conectar o áudio ao Analyser
-        source = audioContext.createMediaElementSource(audio);
-        source.connect(analyser);
-        analyser.connect(audioContext.destination);
     } catch (e) {
-        console.warn("Web Audio API bloqueada por políticas de CORS do servidor de streaming ou não suportada. Usando visualizador procedural alternativo.", e);
-        useProceduralVisualizer = true;
+        console.warn("Web Audio API não pôde ser inicializada:", e);
     }
 }
 
