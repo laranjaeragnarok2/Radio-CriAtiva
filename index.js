@@ -1,8 +1,8 @@
 /* index.js - Aplicativo de Rádio e Hub de Artistas */
 
 // --- CONFIGURAÇÃO DA RÁDIO (Substitua pelas suas URLs do AzuraCast) ---
-const STREAM_URL = 'https://icecast.radiofrance.fr/fip-midfi.mp3'; // Stream fallback de rádio pública
-const API_URL = 'https://demo.azuracast.com/api/nowplaying/1'; // URL de exemplo da API Now Playing
+const STREAM_URL = 'https://4372f1297fc296.lhr.life/listen/radio_criativa/radio.mp3'; // Stream segura via túnel localhost.run
+const API_URL = 'https://4372f1297fc296.lhr.life/api/nowplaying/1'; // API de metadados via túnel localhost.run
 
 // --- ELEMENTOS DO DOM ---
 const audio = document.getElementById('audio-stream');
