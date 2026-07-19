@@ -2,22 +2,23 @@
 
 /* CSS Variables */
 :root {
-    --bg-primary: #0a0518; /* Deep VHS midnight purple */
-    --bg-secondary: #140d2b; /* Tape deck plastic console casing */
-    --accent-purple: #b967ff; /* Classic Vaporwave Purple */
-    --accent-pink: #ff71ce; /* Neon Pink */
-    --accent-blue: #01cdfe; /* Neon Cyan */
-    --accent-green: #05ffa1; /* Mint Green */
-    --accent-yellow: #fffb96; /* Neon Yellow/Orange */
+    --bg-primary: #151a1d; /* Deep slate gray-black derived from #52656B */
+    --bg-secondary: #242c2f; /* Mid slate plastic casing from #52656B */
+    --accent-purple: #52656b; /* Slate grey from the palette */
+    --accent-pink: #ff3b77; /* Vibrant Pink from the palette */
+    --accent-blue: #b8b89f; /* Sage green from the palette */
+    --accent-green: #cdff00; /* Acid Lime green from the palette */
+    --accent-yellow: #e2e2ca; /* Light sage highlight */
     --text-main: #ffffff;
-    --text-muted: #cbd5e1;
-    --text-dark: #7a6e9f;
-    --glass-bg: rgba(20, 13, 43, 0.9); /* Solid retro dashboard card background */
-    --glass-bg-hover: rgba(255, 255, 255, 0.08);
-    --glass-border: #44327a; /* Neon outline borders */
+    --text-muted: #b8b89f; /* Sage green as muted text */
+    --text-dark: #52656b; /* Slate grey as dark text */
+    --glass-bg: rgba(36, 44, 47, 0.95); /* Solid slate console card background */
+    --glass-bg-hover: rgba(255, 255, 255, 0.05);
+    --glass-border: #52656b; /* Slate borders */
     --glass-shadow: 6px 6px 0px #000000; /* Flat solid drop shadows */
-    --glow-purple: rgba(185, 103, 255, 0.35);
-    --glow-pink: rgba(255, 113, 206, 0.35);
+    --glow-purple: rgba(82, 101, 107, 0.35);
+    --glow-pink: rgba(255, 59, 119, 0.35);
+    --grid-color: rgba(255, 59, 119, 0.15); /* Neon pink grid lines */
     --retro-border: 3px solid #000000;
 }
 
