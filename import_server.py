@@ -6,9 +6,31 @@ import subprocess
 import os
 import shutil
 import glob
+import urllib.parse
 
 PORT = 8081
 DOWNLOAD_DIR = "/home/horyu/Projetos/independent-radio-portal/temp_downloads"
+
+def load_dotenv(dotenv_path=".env"):
+    if os.path.exists(dotenv_path):
+        with open(dotenv_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" in line:
+                    key, val = line.split("=", 1)
+                    key = key.strip()
+                    val = val.strip().strip("'\"")
+                    os.environ[key] = val
+
+def is_valid_url(url_str):
+    try:
+        parsed = urllib.parse.urlparse(url_str)
+        return parsed.scheme in ('http', 'https') and bool(parsed.netloc)
+    except Exception:
+        return False
+
 
 class ImportHandler(http.server.BaseHTTPRequestHandler):
     def end_headers(self):
@@ -34,10 +56,21 @@ class ImportHandler(http.server.BaseHTTPRequestHandler):
                     self.send_error_response("URL não fornecida.")
                     return
                 
+                # Validar se a URL é HTTP/HTTPS para evitar SSRF e caminhos locais indesejados
+                if not is_valid_url(url):
+                    self.send_error_response("URL inválida ou protocolo não suportado (apenas HTTP/HTTPS).")
+                    return
+                
+                # Verificar se a senha do SUDO está configurada
+                sudo_password = os.environ.get("SUDO_PASSWORD")
+                if not sudo_password:
+                    self.send_error_response("Configuração incompleta: SUDO_PASSWORD não configurada no servidor (.env).")
+                    return
+
                 # Criar diretório temporário
                 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
                 
-                # 1. Baixar o áudio via yt-dlp
+                # 1. Baixar o áudio via yt-dlp de forma segura
                 print(f"[Import Server] Baixando URL: {url}")
                 yt_cmd = [
                     "yt-dlp",
@@ -45,6 +78,7 @@ class ImportHandler(http.server.BaseHTTPRequestHandler):
                     "--audio-format", "mp3",
                     "--audio-quality", "0",
                     "-o", f"{DOWNLOAD_DIR}/%(title)s.%(ext)s",
+                    "--",
                     url
                 ]
                 
@@ -64,19 +98,30 @@ class ImportHandler(http.server.BaseHTTPRequestHandler):
                 print(f"[Import Server] Arquivos baixados: {downloaded_files}")
                 
                 # 2. Copiar para o container Docker
-                # Como os comandos docker precisam de privilégios sudo, vamos rodar com o password Ragnarok2
                 # Nota: Copiamos o conteúdo da pasta de downloads temporários para a pasta de mídia da rádio
-                cp_cmd = "echo ragnarok2 | sudo -S docker cp /home/horyu/Projetos/independent-radio-portal/temp_downloads/. azuracast:/var/azuracast/stations/radio_criativa/media/"
-                subprocess.run(cp_cmd, shell=True, check=True)
+                # Executado de forma segura sem shell=True, enviando a senha via stdin
+                cp_cmd = [
+                    "sudo", "-S", "docker", "cp",
+                    f"{DOWNLOAD_DIR}/.",
+                    "azuracast:/var/azuracast/stations/radio_criativa/media/"
+                ]
+                subprocess.run(cp_cmd, input=f"{sudo_password}\n", text=True, check=True)
                 
                 # 3. Ajustar as permissões de arquivos no container
                 # O proprietário dos arquivos de mídia deve ser o usuário azuracast (UID 1000)
-                chown_cmd = "echo ragnarok2 | sudo -S docker exec -u 0 azuracast chown -R azuracast:azuracast /var/azuracast/stations/radio_criativa/media/"
-                subprocess.run(chown_cmd, shell=True, check=True)
+                chown_cmd = [
+                    "sudo", "-S", "docker", "exec", "-u", "0", "azuracast",
+                    "chown", "-R", "azuracast:azuracast",
+                    "/var/azuracast/stations/radio_criativa/media/"
+                ]
+                subprocess.run(chown_cmd, input=f"{sudo_password}\n", text=True, check=True)
                 
                 # 4. Acionar o reprocessamento de mídia no AzuraCast (atualiza banco de dados)
-                reprocess_cmd = "echo ragnarok2 | sudo -S docker exec -u azuracast azuracast azuracast_cli azuracast:media:reprocess"
-                subprocess.run(reprocess_cmd, shell=True, check=True)
+                reprocess_cmd = [
+                    "sudo", "-S", "docker", "exec", "-u", "azuracast", "azuracast",
+                    "azuracast_cli", "azuracast:media:reprocess"
+                ]
+                subprocess.run(reprocess_cmd, input=f"{sudo_password}\n", text=True, check=True)
                 
                 # Limpar diretório temporário
                 shutil.rmtree(DOWNLOAD_DIR)
@@ -111,6 +156,9 @@ class ImportHandler(http.server.BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(response).encode('utf-8'))
 
 if __name__ == '__main__':
+    # Carregar variáveis de ambiente do arquivo .env local se existir
+    load_dotenv()
+    
     # Garantir que a pasta temporária de downloads esteja limpa ao iniciar
     if os.path.exists(DOWNLOAD_DIR):
         shutil.rmtree(DOWNLOAD_DIR)

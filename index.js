@@ -93,6 +93,20 @@ const mockTracks = [
 ];
 let currentMockIndex = 0;
 
+// --- FUNÇÃO AUXILIAR DE SEGURANÇA ---
+function escapeHTML(str) {
+    if (!str) return '';
+    return str.replace(/[&<>'"]/g, 
+        tag => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#39;',
+            '"': '&quot;'
+        }[tag] || tag)
+    );
+}
+
 // --- 1. CONTROLE DE NAVEGAÇÃO SPA ---
 navButtons.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -509,7 +523,7 @@ if (dragDropZone && fileInput) {
         if (fileInput.files.length > 0) {
             const file = fileInput.files[0];
             const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-            fileLabel.innerHTML = `<strong>${file.name}</strong> (${sizeMB} MB) selecionado.`;
+            fileLabel.innerHTML = `<strong>${escapeHTML(file.name)}</strong> (${sizeMB} MB) selecionado.`;
             dragDropZone.style.borderColor = 'var(--accent-blue)';
         }
     });
@@ -536,7 +550,7 @@ if (dragDropZone && fileInput) {
             fileInput.files = files;
             const file = files[0];
             const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-            fileLabel.innerHTML = `<strong>${file.name}</strong> (${sizeMB} MB) soltado com sucesso.`;
+            fileLabel.innerHTML = `<strong>${escapeHTML(file.name)}</strong> (${sizeMB} MB) soltado com sucesso.`;
             dragDropZone.style.borderColor = 'var(--accent-blue)';
         }
     });
@@ -679,7 +693,8 @@ if (urlImportForm) {
             importSpinner.classList.add('hidden');
             importSuccessDetails.classList.remove('hidden');
             
-            const fileList = data.files ? data.files.join('<br>• ') : '';
+            const escapedFiles = data.files ? data.files.map(escapeHTML) : [];
+            const fileList = escapedFiles.join('<br>• ');
             importSuccessMsg.innerHTML = `Mídia(s) baixada(s) e indexada(s) com sucesso na rádio:<br><strong style="color:var(--accent-green)">• ${fileList}</strong>`;
         })
         .catch(err => {
