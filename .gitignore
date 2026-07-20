@@ -19,3 +19,7 @@ env/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Planning and branding files
+radio_branding_plan.md
+
