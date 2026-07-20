@@ -86,9 +86,61 @@ Este projeto foi auditado e ajustado seguindo critérios rigorosos de segurança
 
 ---
 
-## 🔮 Roteiro de Descentralização
+## 🔮 Roteiro de Aprimoramentos & Descentralização
 
-O desenvolvimento contínuo da Rádio CriAtiva visa descentralizar a música independente:
-* **Web3 real**: Integração com a carteira MetaMask e contratos inteligentes da rede Ethereum/EVM para doações de microtransações diretas ao artista atual por meio de cripto.
-* **Hospedagem IPFS**: Distribuição P2P de arquivos de áudio dos artistas usando o IPFS, garantindo resiliência contra censura e alta disponibilidade de download.
-* **Governança Comunitária (DAO)**: Votação baseada em tokens da comunidade para curadoria e decisão da grade de programação da rádio.
+O desenvolvimento contínuo da **Rádio CriAtiva** está dividido em quatro fases incrementais de infraestrutura, interface e inovação descentralizada:
+
+### Fase 1: Estabilização de Transmissão e Contingência 🛠️
+* **Configuração de Contingência (Fallback)**: Upload de vinhetas e músicas institucionais sob o menu `Arquivo Fallback Personalizado` no AzuraCast. Garante áudio contínuo e metadados descritivos customizados mesmo quando o DJ estiver offline.
+* **AutoDJ Automatizado**: Configuração de playlists locais na aba `Mídia` e ativação do AutoDJ para transição suave (crossfade) quando a live do Mixxx for interrompida.
+* **Sincronização de Relógio de Áudio**: Ajuste fino do motor de áudio no Mixxx para alinhamento estrito de latência e redução de Xruns.
+
+### Fase 2: Experiência Visual e Interatividade 🎨
+* **Equalizador LED Dinâmico**: Otimização do analisador de áudio no front-end para usar buffers de FFT (Fast Fourier Transform) mais precisos na simulação das luzes LED do cassete.
+* **Mural Dinâmico com Websockets**: Substituição do chat simulado por uma integração real baseada em Websockets conectados a uma sala de chat persistente de ouvintes.
+* **Customizador de Fita Cassete**: Recurso para o ouvinte alterar cores de adesivos e skins da fita (Vaporwave, Synthwave, Dark Mode).
+
+### Fase 3: Automação Administrativa & Bots 🤖
+* **Injeção Inteligente de Faixas**: Melhorar o `import_server.py` com uma fila assíncrona de download de URLs do YouTube/Soundcloud e notificação de progresso no painel administrativo do portal.
+* **Bot de Notificações Discord/Telegram**: Disparador automático via Webhooks do AzuraCast para anunciar em redes sociais e chats da rádio assim que o DJ entrar "AO VIVO".
+* **Relatórios e Analytics**: Painel administrativo simplificado integrado para visualizar histórico de faixas tocadas e audiência geolocalizada.
+
+### Fase 4: Descentralização Completa (Web3 & IPFS) 🌐
+* **Conexão Real Web3**: Integração funcional com a extensão MetaMask para validação de carteira de ouvintes e artistas.
+* **Hospedagem IPFS P2P**: Upload das músicas enviadas no Portal do Artista diretamente para a rede descentralizada IPFS usando Pinning Services (Pinata, Web3.Storage), retornando a CID criptográfica.
+* **Dicas e Doações On-Chain**: Smart contracts na rede Polygon/Ethereum para permitir micro-doações em tempo real (dips/tips em cripto) diretamente da carteira do ouvinte para a carteira cadastrada do artista que está tocando.
+
+---
+
+## 📡 Solução Técnica de Rede: Correção de Reprodução (Chromium Bypass)
+
+Os navegadores baseados em Chromium (Brave, Google Chrome, Opera) possuem um comportamento restritivo ao lidar com fluxos de áudio MP3 transmitidos por servidores Icecast em conexões locais. O Icecast responde a sondagens de cabeçalhos de faixa (Range Requests) retornando um tamanho sobressalente inválido, interpretado pelo navegador como um arquivo inacessível de **18 Exabytes**, travando a reprodução e gerando erro de fonte não suportada (`NotSupportedError`).
+
+### A Solução Aplicada no Proxy do Servidor:
+Configuramos a rota de entrega de fluxo do Nginx (`nginx.conf` da estação dentro do container Docker) e o nosso proxy (`import_server.py`) para **interceptar e anular** requisições de range do navegador:
+1. Removemos o cabeçalho `Range` de entrada.
+2. Ocultamos os cabeçalhos `Accept-Ranges` e `Content-Range` de saída do Icecast.
+3. Forçamos a injeção do cabeçalho `Accept-Ranges: none` na resposta.
+
+Isso faz com que o navegador processe a transmissão como um fluxo de áudio contínuo e progressivo, eliminando qualquer travamento ou ruído em qualquer navegador do ecossistema.
+
+---
+
+## 🎙️ Guia de Resolução de Problemas: Microfone Craquelando no Linux
+
+Se o seu microfone apresentar um som craquelado, robótico ou com estalos e cortes frequentes na transmissão do Mixxx, isso indica a ocorrência de **Xruns (Buffer Underruns)**: o processador não está conseguindo enviar as amostras de áudio no tempo estipulado pelo buffer.
+
+### Como Diagnosticar e Corrigir:
+
+1. **Ajustar o Buffer de Áudio (Tamanho do Bloco)**:
+   * Vá em **Opções** -> **Preferências** -> **Hardware de Som**.
+   * Localize a configuração de **Buffer de Áudio**.
+   * Se estiver em `auto` ou em um valor baixo (como `256` ou `512` quadros), altere para um valor estático mais alto, como **`1024 quadros (21.3 ms)`** ou **`2048 quadros (42.7 ms)`**.
+   * *Buffers maiores dão mais estabilidade e fôlego à CPU, eliminando estalos na voz.*
+
+2. **Sincronizar a Taxa de Amostragem (Sample Rate)**:
+   * Garanta que a **Taxa de Amostragem** do Mixxx (em Hardware de Som) está em **`44100 Hz`** (padrão de estúdio e da maioria das placas/microfones USB comuns).
+   * Se a sua placa de áudio do sistema (PipeWire/PulseAudio) estiver operando em 44100Hz e o Mixxx estiver configurado para 48000Hz (ou vice-versa), haverá reamostragem pesada em tempo real no canal do microfone, causando o craquelado. Mude ambos para **`44100 Hz`**.
+
+3. **Mudar a API de Som**:
+   * Se você estiver usando a API `JACK Connection Kit` sem ter um servidor JACK profissional rodando no sistema, mude a **API de Som** para **`PulseAudio`** ou **`ALSA`**. A API PulseAudio gerencia o compartilhamento do dispositivo e a reamostragem automática muito melhor para microfones domésticos.
