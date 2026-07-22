@@ -79,6 +79,19 @@
                     <!-- HERO PLAYER CARD -->
                     <div class="hero-player-wrapper">
                         <div class="player-card">
+                            <!-- Skin / Theme Selector Bar -->
+                            <div class="skin-selector-bar">
+                                <div class="skin-selector-title">
+                                    <i class="fa-solid fa-palette"></i> SKIN DECK
+                                </div>
+                                <div class="skin-options">
+                                    <button type="button" class="skin-chip active" data-skin="vaporwave">Vaporwave</button>
+                                    <button type="button" class="skin-chip" data-skin="cyberpunk">Cyberpunk</button>
+                                    <button type="button" class="skin-chip" data-skin="goldenera">Golden Era</button>
+                                    <button type="button" class="skin-chip" data-skin="dark">Dark</button>
+                                </div>
+                            </div>
+
                             <div class="stream-status">
                                 <span class="live-indicator offline" id="stream-indicator">
                                     <span class="live-dot"></span> <span id="indicator-text">REPRODUZIR</span>
@@ -257,11 +270,31 @@
                                 </div>
                             </div>
                             <form class="chat-input-area" id="chat-form">
-                                <input type="text" placeholder="Seu apelido..." id="chat-nickname" maxlength="15" required class="input-nickname">
-                                <input type="text" placeholder="Digite uma mensagem..." id="chat-text" maxlength="100" required class="input-message">
-                                <button type="submit" class="btn btn-primary btn-icon" id="btn-send-chat" title="Enviar Mensagem">
-                                    <i class="fa-regular fa-paper-plane"></i>
-                                </button>
+                                <div class="chat-avatar-selector">
+                                    <span class="avatar-label">Avatar:</span>
+                                    <div class="avatar-options">
+                                        <button type="button" class="avatar-chip active" data-avatar="🎧">🎧</button>
+                                        <button type="button" class="avatar-chip" data-avatar="🎙️">🎙️</button>
+                                        <button type="button" class="avatar-chip" data-avatar="🎸">🎸</button>
+                                        <button type="button" class="avatar-chip" data-avatar="📻">📻</button>
+                                        <button type="button" class="avatar-chip" data-avatar="👾">👾</button>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 8px; width: 100%;">
+                                    <input type="text" placeholder="Seu apelido..." id="chat-nickname" maxlength="15" required class="input-nickname">
+                                    <input type="text" placeholder="Digite uma mensagem..." id="chat-text" maxlength="100" required class="input-message" style="flex: 1;">
+                                    <button type="submit" class="btn btn-primary btn-icon" id="btn-send-chat" title="Enviar Mensagem">
+                                        <i class="fa-regular fa-paper-plane"></i>
+                                    </button>
+                                </div>
+                                <div class="emoji-quick-bar">
+                                    <button type="button" class="emoji-btn" data-emoji="❤️">❤️</button>
+                                    <button type="button" class="emoji-btn" data-emoji="🔥">🔥</button>
+                                    <button type="button" class="emoji-btn" data-emoji="📻">📻</button>
+                                    <button type="button" class="emoji-btn" data-emoji="🤘">🤘</button>
+                                    <button type="button" class="emoji-btn" data-emoji="⚡">⚡</button>
+                                    <button type="button" class="emoji-btn" data-emoji="🎉">🎉</button>
+                                </div>
                             </form>
                         </div>
                     </div>
@@ -498,7 +531,18 @@
                                 <div class="status-loading-spinner text-center" id="import-spinner">
                                     <i class="fa-solid fa-compact-disc fa-spin animate-pulse" style="font-size: 2.5rem; color: var(--accent-blue);"></i>
                                     <h4 class="margin-top-sm">Baixando e Processando Mídia...</h4>
-                                    <p class="text-sm text-muted">Aguarde. Isso pode levar de alguns segundos a minutos dependendo do tamanho da playlist.</p>
+                                    
+                                    <!-- Progress Bar Real -->
+                                    <div class="progress-bar-wrapper">
+                                        <div class="progress-header">
+                                            <span>PROGRESSO DE IMPORTAÇÃO</span>
+                                            <span id="import-progress-percent">0%</span>
+                                        </div>
+                                        <div class="progress-track">
+                                            <div class="progress-fill" id="import-progress-fill" style="width: 0%;"></div>
+                                        </div>
+                                        <div class="progress-status-msg" id="import-progress-msg">Adicionando tarefa à fila...</div>
+                                    </div>
                                 </div>
                                 <div class="status-success-details hidden" id="import-success-details">
                                     <div class="success-icon" style="color:var(--accent-green)"><i class="fa-solid fa-circle-check"></i></div>
@@ -621,6 +665,23 @@
                             <a href="http://localhost" target="_blank" class="btn btn-primary btn-full margin-top-sm btn-dashboard-link" style="text-decoration:none;">
                                 <i class="fa-solid fa-gauge-high"></i> Abrir Dashboard
                             </a>
+                        </div>
+
+                        <!-- Webhook Live Notification Tester -->
+                        <div class="webhook-tester-card margin-top">
+                            <h4><i class="fa-solid fa-bell animate-pulse" style="color:var(--accent-green)"></i> Notificador Discord/Telegram</h4>
+                            <p class="text-muted text-sm margin-top-xs">Simule ou envie um alerta de live para os ouvintes no Discord ou Telegram:</p>
+                            
+                            <form id="webhook-notify-form" class="margin-top-xs" style="display:flex; flex-direction:column; gap:8px;">
+                                <input type="text" id="webhook-dj-name" placeholder="Nome do DJ / Apresentador" class="input-nickname" style="width:100%; box-sizing:border-box;" value="Horyu">
+                                <input type="text" id="webhook-show-title" placeholder="Nome do Programa" class="input-nickname" style="width:100%; box-sizing:border-box;" value="Sessão Especial Analog Beat">
+                                <input type="url" id="webhook-url-input" placeholder="URL Webhook Discord (Opcional)" class="input-message" style="width:100%; box-sizing:border-box;">
+                                <button type="submit" class="btn btn-sm btn-primary" id="btn-trigger-webhook">
+                                    <i class="fa-solid fa-paper-plane"></i> Disparar Alerta AO VIVO
+                                </button>
+                            </form>
+                            
+                            <div class="webhook-preview-code hidden" id="webhook-response-box"></div>
                         </div>
                     </aside>
                 </div>

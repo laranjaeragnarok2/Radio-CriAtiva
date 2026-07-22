@@ -7,9 +7,17 @@ import os
 import shutil
 import glob
 import urllib.parse
+import urllib.request
+import threading
+import time
+import re
 
 PORT = 8081
-DOWNLOAD_DIR = "/home/horyu/Projetos/independent-radio-portal/temp_downloads"
+DOWNLOAD_DIR_BASE = "/home/horyu/Projetos/independent-radio-portal/temp_downloads"
+
+# Armazenamento de tarefas de importação em segundo plano
+TASKS = {}
+TASKS_LOCK = threading.Lock()
 
 def load_dotenv(dotenv_path=".env"):
     if os.path.exists(dotenv_path):
@@ -31,11 +39,112 @@ def is_valid_url(url_str):
     except Exception:
         return False
 
+def run_async_import(task_id, url, sudo_password):
+    task_dir = os.path.join(DOWNLOAD_DIR_BASE, task_id)
+    try:
+        os.makedirs(task_dir, exist_ok=True)
+        
+        with TASKS_LOCK:
+            TASKS[task_id]["status"] = "downloading"
+            TASKS[task_id]["percent"] = 5
+            TASKS[task_id]["message"] = "Iniciando o download do áudio..."
+        
+        print(f"[Import Server Task {task_id}] Baixando URL: {url}")
+        
+        yt_cmd = [
+            "yt-dlp",
+            "-x",
+            "--audio-format", "mp3",
+            "--audio-quality", "0",
+            "--newline",
+            "-o", f"{task_dir}/%(title)s.%(ext)s",
+            "--",
+            url
+        ]
+        
+        process = subprocess.Popen(yt_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        
+        # Expressão regular para capturar percentual do yt-dlp: [download] 45.2% of ...
+        percent_regex = re.compile(r'\[download\]\s+(\d+(?:\.\d+)?)%')
+        
+        for line in iter(process.stdout.readline, ''):
+            if not line:
+                break
+            match = percent_regex.search(line)
+            if match:
+                parsed_pct = float(match.group(1))
+                # Normaliza para a escala 5% - 75%
+                calc_pct = round(5 + (parsed_pct * 0.70), 1)
+                with TASKS_LOCK:
+                    TASKS[task_id]["percent"] = calc_pct
+                    TASKS[task_id]["message"] = f"Baixando mídia... ({parsed_pct:.1f}%)"
+        
+        process.wait()
+        
+        if process.returncode != 0:
+            raise Exception("Ocorreu uma falha ao baixar a mídia com o yt-dlp.")
+        
+        downloaded_files = glob.glob(f"{task_dir}/*.mp3")
+        if not downloaded_files:
+            raise Exception("Nenhum arquivo MP3 foi gerado após o download.")
+        
+        with TASKS_LOCK:
+            TASKS[task_id]["status"] = "copying"
+            TASKS[task_id]["percent"] = 80
+            TASKS[task_id]["message"] = "Enviando mídias para o servidor AzuraCast..."
+        
+        print(f"[Import Server Task {task_id}] Copiando {len(downloaded_files)} arquivo(s)...")
+        
+        cp_cmd = [
+            "sudo", "-S", "docker", "cp",
+            f"{task_dir}/.",
+            "azuracast:/var/azuracast/stations/radio_criativa/media/"
+        ]
+        subprocess.run(cp_cmd, input=f"{sudo_password}\n", text=True, check=True)
+        
+        chown_cmd = [
+            "sudo", "-S", "docker", "exec", "-u", "0", "azuracast",
+            "chown", "-R", "azuracast:azuracast",
+            "/var/azuracast/stations/radio_criativa/media/"
+        ]
+        subprocess.run(chown_cmd, input=f"{sudo_password}\n", text=True, check=True)
+        
+        with TASKS_LOCK:
+            TASKS[task_id]["status"] = "indexing"
+            TASKS[task_id]["percent"] = 90
+            TASKS[task_id]["message"] = "Indexando faixas no banco do AzuraCast..."
+        
+        reprocess_cmd = [
+            "sudo", "-S", "docker", "exec", "-u", "azuracast", "azuracast",
+            "azuracast_cli", "azuracast:media:reprocess"
+        ]
+        subprocess.run(reprocess_cmd, input=f"{sudo_password}\n", text=True, check=True)
+        
+        filenames = [os.path.basename(f) for f in downloaded_files]
+        with TASKS_LOCK:
+            TASKS[task_id]["status"] = "completed"
+            TASKS[task_id]["percent"] = 100
+            TASKS[task_id]["message"] = f"Importação concluída com sucesso! ({len(filenames)} faixas adicionadas)"
+            TASKS[task_id]["files"] = filenames
+            
+        print(f"[Import Server Task {task_id}] Sucesso!")
+        
+    except Exception as err:
+        print(f"[Import Server Task {task_id}] Erro: {err}")
+        with TASKS_LOCK:
+            TASKS[task_id]["status"] = "error"
+            TASKS[task_id]["percent"] = 0
+            TASKS[task_id]["error"] = str(err)
+            TASKS[task_id]["message"] = f"Falha na importação: {str(err)}"
+    finally:
+        if os.path.exists(task_dir):
+            shutil.rmtree(task_dir, ignore_errors=True)
+
 
 class ImportHandler(http.server.BaseHTTPRequestHandler):
     def end_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
         super().end_headers()
 
@@ -45,7 +154,7 @@ class ImportHandler(http.server.BaseHTTPRequestHandler):
 
     def do_POST(self):
         if self.path == '/import':
-            content_length = int(self.headers['Content-Length'])
+            content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length)
             
             try:
@@ -56,102 +165,123 @@ class ImportHandler(http.server.BaseHTTPRequestHandler):
                     self.send_error_response("URL não fornecida.")
                     return
                 
-                # Validar se a URL é HTTP/HTTPS para evitar SSRF e caminhos locais indesejados
                 if not is_valid_url(url):
                     self.send_error_response("URL inválida ou protocolo não suportado (apenas HTTP/HTTPS).")
                     return
                 
-                # Verificar se a senha do SUDO está configurada
                 sudo_password = os.environ.get("SUDO_PASSWORD")
                 if not sudo_password:
                     self.send_error_response("Configuração incompleta: SUDO_PASSWORD não configurada no servidor (.env).")
                     return
 
-                # Criar diretório temporário
-                os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+                task_id = f"task_{int(time.time())}"
                 
-                # 1. Baixar o áudio via yt-dlp de forma segura
-                print(f"[Import Server] Baixando URL: {url}")
-                yt_cmd = [
-                    "yt-dlp",
-                    "-x",
-                    "--audio-format", "mp3",
-                    "--audio-quality", "0",
-                    "-o", f"{DOWNLOAD_DIR}/%(title)s.%(ext)s",
-                    "--",
-                    url
-                ]
+                with TASKS_LOCK:
+                    TASKS[task_id] = {
+                        "id": task_id,
+                        "url": url,
+                        "status": "queued",
+                        "percent": 0,
+                        "message": "Tarefa adicionada à fila de importação...",
+                        "files": [],
+                        "error": None
+                    }
                 
-                download_result = subprocess.run(yt_cmd, capture_output=True, text=True)
+                # Inicia tarefa em segundo plano
+                t = threading.Thread(target=run_async_import, args=(task_id, url, sudo_password), daemon=True)
+                t.start()
                 
-                if download_result.returncode != 0:
-                    print(f"[Import Server] Erro no download: {download_result.stderr}")
-                    self.send_error_response(f"Erro ao baixar do YouTube: {download_result.stderr}")
-                    return
-                
-                # Identificar arquivos baixados
-                downloaded_files = glob.glob(f"{DOWNLOAD_DIR}/*.mp3")
-                if not downloaded_files:
-                    self.send_error_response("Nenhum arquivo MP3 foi gerado.")
-                    return
-                
-                print(f"[Import Server] Arquivos baixados: {downloaded_files}")
-                
-                # 2. Copiar para o container Docker
-                # Nota: Copiamos o conteúdo da pasta de downloads temporários para a pasta de mídia da rádio
-                # Executado de forma segura sem shell=True, enviando a senha via stdin
-                cp_cmd = [
-                    "sudo", "-S", "docker", "cp",
-                    f"{DOWNLOAD_DIR}/.",
-                    "azuracast:/var/azuracast/stations/radio_criativa/media/"
-                ]
-                subprocess.run(cp_cmd, input=f"{sudo_password}\n", text=True, check=True)
-                
-                # 3. Ajustar as permissões de arquivos no container
-                # O proprietário dos arquivos de mídia deve ser o usuário azuracast (UID 1000)
-                chown_cmd = [
-                    "sudo", "-S", "docker", "exec", "-u", "0", "azuracast",
-                    "chown", "-R", "azuracast:azuracast",
-                    "/var/azuracast/stations/radio_criativa/media/"
-                ]
-                subprocess.run(chown_cmd, input=f"{sudo_password}\n", text=True, check=True)
-                
-                # 4. Acionar o reprocessamento de mídia no AzuraCast (atualiza banco de dados)
-                reprocess_cmd = [
-                    "sudo", "-S", "docker", "exec", "-u", "azuracast", "azuracast",
-                    "azuracast_cli", "azuracast:media:reprocess"
-                ]
-                subprocess.run(reprocess_cmd, input=f"{sudo_password}\n", text=True, check=True)
-                
-                # Limpar diretório temporário
-                shutil.rmtree(DOWNLOAD_DIR)
-                
-                # Enviar resposta de sucesso
-                self.send_response(200)
+                self.send_response(202)
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
                 response = {
-                    "status": "success",
-                    "message": "Playlist/Mídia importada e indexada no AzuraCast com sucesso!",
-                    "files": [os.path.basename(f) for f in downloaded_files]
+                    "status": "queued",
+                    "task_id": task_id,
+                    "message": "Importação iniciada em segundo plano."
                 }
                 self.wfile.write(json.dumps(response).encode('utf-8'))
-                print("[Import Server] Importação concluída com sucesso!")
                 
             except Exception as e:
-                print(f"[Import Server] Erro interno: {str(e)}")
-                self.send_error_response(f"Erro interno do servidor: {str(e)}")
+                self.send_error_response(f"Erro interno ao criar tarefa: {str(e)}")
+                
+        elif self.path == '/api/notify-live':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length)
+            try:
+                data = json.loads(post_data.decode('utf-8'))
+                webhook_url = data.get('webhook_url', '').strip()
+                dj_name = data.get('dj_name', 'DJ Anônimo')
+                show_title = data.get('show_title', 'Sessão ao Vivo')
+                platform = data.get('platform', 'discord').lower()
+                
+                payload = {
+                    "username": "Rádio CriAtiva Live Bot",
+                    "avatar_url": "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200",
+                    "content": f"🚨 **ESTAMOS AO VIVO NA RÁDIO CRIATIVA!** 🎙️📻\n\n**Apresentador**: {dj_name}\n**Programa**: {show_title}\n**Sintonize agora**: http://localhost (ou ouça no portal)",
+                    "embeds": [
+                        {
+                            "title": f"📻 {show_title} - com {dj_name}",
+                            "description": "Transmission started live from our independent analog decks!",
+                            "color": 16711935,
+                            "fields": [
+                                {"name": "Status", "value": "🟢 NO AR", "inline": True},
+                                {"name": "Frequência", "value": "90.9 MHz / Web", "inline": True}
+                            ]
+                        }
+                    ]
+                }
+                
+                # Se houver webhook real, faz a requisição
+                sent_real = False
+                if webhook_url and is_valid_url(webhook_url):
+                    req_data = json.dumps(payload).encode('utf-8')
+                    req = urllib.request.Request(webhook_url, data=req_data, headers={'Content-Type': 'application/json', 'User-Agent': 'RadioCriAtivaBot/1.0'})
+                    try:
+                        with urllib.request.urlopen(req, timeout=5) as res:
+                            sent_real = True
+                    except Exception as err:
+                        print(f"[Import Server] Erro ao enviar webhook real: {err}")
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                res_data = {
+                    "status": "success",
+                    "sent_real": sent_real,
+                    "message": "Notificação ao vivo disparada e formatada com sucesso!",
+                    "payload": payload
+                }
+                self.wfile.write(json.dumps(res_data).encode('utf-8'))
+                
+            except Exception as e:
+                self.send_error_response(f"Erro ao processar notificação: {str(e)}")
         else:
             self.send_response(404)
             self.end_headers()
 
     def do_GET(self):
-        if self.path == '/stream':
-            import urllib.request
+        parsed_url = urllib.parse.urlparse(self.path)
+        
+        if parsed_url.path == '/import-status':
+            query_params = urllib.parse.parse_qs(parsed_url.query)
+            task_id = query_params.get('task_id', [None])[0]
+            
+            if not task_id or task_id not in TASKS:
+                self.send_error_response("Tarefa de importação não encontrada.")
+                return
+            
+            with TASKS_LOCK:
+                task_data = dict(TASKS[task_id])
+                
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(task_data).encode('utf-8'))
+            
+        elif parsed_url.path == '/stream':
             stream_url = "http://localhost/listen/radio_criativa/radio.mp3"
             try:
                 req = urllib.request.Request(stream_url)
-                # Faz requisição simples para o AzuraCast (sem Range)
                 with urllib.request.urlopen(req) as response:
                     self.send_response(200)
                     self.send_header('Content-Type', 'audio/mpeg')
@@ -169,7 +299,6 @@ class ImportHandler(http.server.BaseHTTPRequestHandler):
                                 break
                             self.wfile.write(chunk)
                     except (ConnectionResetError, BrokenPipeError):
-                        # Conexão encerrada pelo navegador (player pausado)
                         pass
             except Exception as e:
                 print(f"[Import Server] Erro no proxy de stream: {e}")
@@ -190,14 +319,13 @@ class ImportHandler(http.server.BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(response).encode('utf-8'))
 
 if __name__ == '__main__':
-    # Carregar variáveis de ambiente do arquivo .env local se existir
     load_dotenv()
     
-    # Garantir que a pasta temporária de downloads esteja limpa ao iniciar
-    if os.path.exists(DOWNLOAD_DIR):
-        shutil.rmtree(DOWNLOAD_DIR)
+    if os.path.exists(DOWNLOAD_DIR_BASE):
+        shutil.rmtree(DOWNLOAD_DIR_BASE, ignore_errors=True)
     
     handler = ImportHandler
     with socketserver.TCPServer(("", PORT), handler) as httpd:
         print(f"[Import Server] Servidor de Importação ativo na porta {PORT}...")
         httpd.serve_forever()
+

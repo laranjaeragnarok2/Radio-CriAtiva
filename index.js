@@ -71,6 +71,35 @@ let source = null;
 let visualizerAnimationId = null;
 let useProceduralVisualizer = false;
 let isWalletConnected = false;
+let currentSelectedAvatar = "🎧";
+let vuPeakValues = new Array(20).fill(0); // Para retenção de picos no VU Meter
+
+// --- GERENCIADOR DE SKINS / TEMAS RETRO ---
+function initSkinTheme() {
+    const savedSkin = localStorage.getItem('radioSkin') || 'vaporwave';
+    setSkinTheme(savedSkin);
+
+    document.querySelectorAll('.skin-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const skin = chip.getAttribute('data-skin');
+            setSkinTheme(skin);
+        });
+    });
+}
+
+function setSkinTheme(skinName) {
+    document.body.setAttribute('data-theme', skinName);
+    localStorage.setItem('radioSkin', skinName);
+    
+    document.querySelectorAll('.skin-chip').forEach(chip => {
+        if (chip.getAttribute('data-skin') === skinName) {
+            chip.classList.add('active');
+        } else {
+            chip.classList.remove('active');
+        }
+    });
+}
+document.addEventListener('DOMContentLoaded', initSkinTheme);
 
 // Banco de dados simulado com dados de descentralização para o player
 const mockTracks = [
@@ -296,7 +325,7 @@ function clearCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-// Desenha o espectro dinâmico (Estilo Equalizador Retro 90s)
+// Desenha o espectro dinâmico (Estilo Equalizador Retro 90s com VU Meter e Peak Hold)
 function drawVisualizer() {
     if (!isPlaying) return;
     
@@ -309,49 +338,55 @@ function drawVisualizer() {
     ctx.clearRect(0, 0, width, height);
     
     const numBars = 20; // Número de colunas no Equalizador
-    const barWidth = Math.floor(width / numBars) - 2;
+    const barWidth = Math.max(2, Math.floor(width / numBars) - 2);
     
     if (!useProceduralVisualizer && analyser) {
         try {
             analyser.getByteFrequencyData(dataArray);
-            
             for (let i = 0; i < numBars; i++) {
-                // Mapeia o espectro para o número de colunas
                 const dataIndex = Math.floor((i / numBars) * bufferLength);
                 const value = dataArray[dataIndex];
                 const percent = value / 255;
                 const barHeight = percent * height;
                 
-                drawLEDColumn(ctx, i * (barWidth + 2), height, barWidth, barHeight);
+                drawLEDColumn(ctx, i * (barWidth + 2), height, barWidth, barHeight, i);
             }
         } catch (corsError) {
             useProceduralVisualizer = true;
         }
     }
     
-    // Fallback: Animação de equalizador pulsante procedural
+    // Fallback: Animação de equalizador pulsante procedural estilo VU Meter
     if (useProceduralVisualizer) {
         const time = Date.now() * 0.003;
         for (let i = 0; i < numBars; i++) {
-            // Simula ruído de equalização baseado em seno/cosseno
             const noise = Math.sin(time + i * 0.4) * 0.35 + Math.cos(time * 1.6 - i * 0.2) * 0.35 + 0.4;
             const barHeight = Math.max(4, noise * height);
             
-            drawLEDColumn(ctx, i * (barWidth + 2), height, barWidth, barHeight);
+            drawLEDColumn(ctx, i * (barWidth + 2), height, barWidth, barHeight, i);
         }
     }
 }
 
-// Auxiliar: Desenha colunas de LEDs segments (Verde -> Amarelo -> Vermelho)
-function drawLEDColumn(ctx, x, y, width, height) {
+// Auxiliar: Desenha colunas de LEDs segments com gradientes e retenção de picos (Peak Hold)
+function drawLEDColumn(ctx, x, y, width, height, columnIndex) {
     const numSegments = 10;
-    const segmentHeight = Math.floor(y / numSegments) - 1;
+    const segmentHeight = Math.max(1, Math.floor(y / numSegments) - 1);
     const activeSegments = Math.ceil(height / (y / numSegments));
+    
+    // Atualiza retenção de pico (Peak Hold)
+    if (activeSegments > vuPeakValues[columnIndex]) {
+        vuPeakValues[columnIndex] = activeSegments;
+    } else {
+        vuPeakValues[columnIndex] = Math.max(0, vuPeakValues[columnIndex] - 0.15); // Decaimento suave
+    }
+    
+    const currentPeak = Math.floor(vuPeakValues[columnIndex]);
     
     for (let j = 0; j < numSegments; j++) {
         const segmentY = y - (j * (segmentHeight + 1)) - segmentHeight;
         
-        let color = "rgba(57, 255, 20, 0.08)"; // Verde apagado
+        let color = "rgba(57, 255, 20, 0.08)";
         if (j < activeSegments) {
             if (j < 6) {
                 color = "#39ff14"; // Verde ativo
@@ -360,11 +395,8 @@ function drawLEDColumn(ctx, x, y, width, height) {
             } else {
                 color = "#ff0055"; // Vermelho ativo
             }
-        } else {
-            // Apagado
-            if (j < 6) color = "rgba(57, 255, 20, 0.08)";
-            else if (j < 8) color = "rgba(255, 255, 0, 0.08)";
-            else color = "rgba(255, 0, 85, 0.08)";
+        } else if (j === currentPeak && j > 0) {
+            color = "#00ffff"; // Cor Neon do Pico
         }
         
         ctx.fillStyle = color;
@@ -428,15 +460,47 @@ function runMockMetadata() {
     currentMockIndex = (currentMockIndex + 1) % mockTracks.length;
 }
 
-// --- 5. CHAT / MURAL DA COMUNIDADE (SIMULADOR INTERATIVO) ---
+// --- 5. CHAT / MURAL DA COMUNIDADE (INTERATIVO COM AVATARES & LOCALSTORAGE) ---
 const botReplies = [
     "Que som incrível! Alguém sabe o nome do artista?",
     "Apoio total à iniciativa de rádio livre. Parabéns!",
     "Saudações de Curitiba! Sintonizado por aqui.",
     "O manual ajudou demais, já estou baixando o Butt para o meu programa no próximo domingo!",
-    "Design maravilhoso desse player!",
-    "Esse hub de artistas descentralizado tem muito futuro. Ansioso pelo IPFS!"
+    "Design maravilhoso desse player cassete!",
+    "Esse hub de artistas descentralizado tem muito futuro."
 ];
+
+// Gerenciador de Avatares & Emojis no Form do Chat
+document.querySelectorAll('.avatar-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+        document.querySelectorAll('.avatar-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        currentSelectedAvatar = chip.getAttribute('data-avatar');
+    });
+});
+
+document.querySelectorAll('.emoji-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const emoji = btn.getAttribute('data-emoji');
+        chatText.value += ` ${emoji}`;
+        chatText.focus();
+    });
+});
+
+// Carregar histórico de mensagens salvas
+function loadChatHistory() {
+    const saved = localStorage.getItem('radio_chat_history');
+    if (saved) {
+        try {
+            const msgs = JSON.parse(saved);
+            chatMessagesContainer.innerHTML = '';
+            msgs.forEach(m => appendChatMessage(m.nick, m.text, m.avatar, m.badge, false));
+        } catch (e) {
+            console.warn("Erro ao carregar histórico de mensagens:", e);
+        }
+    }
+}
+loadChatHistory();
 
 chatForm.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -445,39 +509,60 @@ chatForm.addEventListener('submit', (e) => {
     const message = chatText.value.trim();
     
     if (nick && message) {
-        // Adicionar mensagem do usuário
-        appendChatMessage(nick, message);
-        
-        // Limpar apenas o campo da mensagem
+        appendChatMessage(nick, message, currentSelectedAvatar, 'Ouvinte', true);
         chatText.value = '';
         
-        // Simular uma resposta de outro ouvinte aleatoriamente após 1.5s
         setTimeout(() => {
-            const randomNick = ["DreadLock", "Leticia_Musica", "CryptoArt", "SomLivre", "Caio_Mixer"][Math.floor(Math.random() * 5)];
+            const randomBot = [
+                { nick: "DreadLock", avatar: "🎸", badge: "Ouvinte" },
+                { nick: "DJ Kael", avatar: "🎙️", badge: "DJ" },
+                { nick: "Leticia_Musica", avatar: "🎧", badge: "Ouvinte" },
+                { nick: "SomLivreBot", avatar: "🤖", badge: "Bot" }
+            ][Math.floor(Math.random() * 4)];
+            
             const randomReply = botReplies[Math.floor(Math.random() * botReplies.length)];
-            appendChatMessage(randomNick, randomReply);
+            appendChatMessage(randomBot.nick, randomReply, randomBot.avatar, randomBot.badge, true);
         }, 1500 + Math.random() * 1500);
     }
 });
 
-function appendChatMessage(sender, text) {
+function appendChatMessage(sender, text, avatar = "🎧", badge = "Ouvinte", saveToLocal = true) {
     const msgDiv = document.createElement('div');
     msgDiv.className = 'chat-msg';
     
-    const senderSpan = document.createElement('div');
-    senderSpan.className = 'chat-msg-user';
-    senderSpan.innerText = sender;
+    const badgeClass = badge.toLowerCase() === 'dj' ? 'badge-dj' : (badge.toLowerCase() === 'bot' ? 'badge-bot' : 'badge-listener');
+    
+    const headerDiv = document.createElement('div');
+    headerDiv.className = 'chat-msg-header';
+    headerDiv.innerHTML = `
+        <span class="chat-msg-avatar">${avatar}</span>
+        <span class="chat-msg-user">${escapeHTML(sender)}</span>
+        <span class="chat-badge ${badgeClass}">${badge}</span>
+    `;
     
     const textP = document.createElement('p');
     textP.innerText = text;
     
-    msgDiv.appendChild(senderSpan);
+    msgDiv.appendChild(headerDiv);
     msgDiv.appendChild(textP);
     
     chatMessagesContainer.appendChild(msgDiv);
-    
-    // Rolagem automática para a última mensagem
     chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+
+    if (saveToLocal) {
+        saveChatMessageToLocal(sender, text, avatar, badge);
+    }
+}
+
+function saveChatMessageToLocal(sender, text, avatar, badge) {
+    try {
+        let history = JSON.parse(localStorage.getItem('radio_chat_history') || '[]');
+        history.push({ nick: sender, text, avatar, badge, time: Date.now() });
+        if (history.length > 30) history = history.slice(-30); // Limita a 30 mensagens
+        localStorage.setItem('radio_chat_history', JSON.stringify(history));
+    } catch (e) {
+        console.warn("Não foi possível salvar no localStorage:", e);
+    }
 }
 
 // Botões auxiliares de cópia de link de stream
@@ -667,7 +752,7 @@ document.querySelectorAll('.copy-cmd-btn').forEach(btn => {
     });
 });
 
-// --- 5. IMPORTAÇÃO DE PLAYLISTS/URLS DO YOUTUBE ---
+// --- 5. IMPORTAÇÃO DE PLAYLISTS/URLS DO YOUTUBE (COM POLLING DE PROGRESSO REAL) ---
 const urlImportForm = document.getElementById('url-import-form');
 const importUrlInput = document.getElementById('import-url-input');
 const importStatusBox = document.getElementById('import-status-box');
@@ -679,12 +764,22 @@ const importErrorMsg = document.getElementById('import-error-msg');
 const btnResetImport = document.getElementById('btn-reset-import');
 const btnRetryImport = document.getElementById('btn-retry-import');
 
+// Elementos da Barra de Progresso Real
+const progressPercentEl = document.getElementById('import-progress-percent');
+const progressFillEl = document.getElementById('import-progress-fill');
+const progressMsgEl = document.getElementById('import-progress-msg');
+
+let activeImportPollInterval = null;
+
 if (urlImportForm) {
     urlImportForm.addEventListener('submit', (e) => {
         e.preventDefault();
         
         const url = importUrlInput.value.trim();
         if (!url) return;
+        
+        // Resetar barra de progresso visual
+        updateImportProgressBar(0, "Iniciando tarefa de importação no servidor...");
         
         // Exibir status de carregamento, ocultar form
         urlImportForm.classList.add('hidden');
@@ -693,41 +788,79 @@ if (urlImportForm) {
         importSuccessDetails.classList.add('hidden');
         importErrorDetails.classList.add('hidden');
         
-        // Enviar requisição para o servidor local de importação
+        // Enviar requisição para o servidor local de importação (porta 8081)
         fetch('http://localhost:8081/import', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url: url })
         })
         .then(response => {
             if (!response.ok) {
                 return response.json().then(errData => {
-                    throw new Error(errData.message || 'Falha ao processar a requisição no servidor.');
+                    throw new Error(errData.message || 'Falha ao iniciar a importação no servidor.');
                 });
             }
             return response.json();
         })
         .then(data => {
-            // Sucesso!
-            importSpinner.classList.add('hidden');
-            importSuccessDetails.classList.remove('hidden');
-            
-            const escapedFiles = data.files ? data.files.map(escapeHTML) : [];
-            const fileList = escapedFiles.join('<br>• ');
-            importSuccessMsg.innerHTML = `Mídia(s) baixada(s) e indexada(s) com sucesso na rádio:<br><strong style="color:var(--accent-green)">• ${fileList}</strong>`;
+            const taskId = data.task_id;
+            if (taskId) {
+                // Iniciar polling de progresso da tarefa em segundo plano
+                pollImportProgress(taskId);
+            } else {
+                throw new Error("ID de tarefa não retornado pelo servidor.");
+            }
         })
         .catch(err => {
-            // Falha
             importSpinner.classList.add('hidden');
             importErrorDetails.classList.remove('hidden');
-            importErrorMsg.innerText = err.message || 'Erro de conexão com o servidor de download local (porta 8081). Certifique-se de que o daemon está ativo.';
+            importErrorMsg.innerText = err.message || 'Erro de conexão com o servidor de download local (porta 8081). Certifique-se de que o daemon import_server.py está rodando.';
         });
     });
 }
 
+function pollImportProgress(taskId) {
+    if (activeImportPollInterval) clearInterval(activeImportPollInterval);
+    
+    activeImportPollInterval = setInterval(() => {
+        fetch(`http://localhost:8081/import-status?task_id=${taskId}`)
+            .then(res => res.json())
+            .then(task => {
+                const percent = task.percent || 0;
+                const message = task.message || "Processando...";
+                
+                updateImportProgressBar(percent, message);
+                
+                if (task.status === 'completed') {
+                    clearInterval(activeImportPollInterval);
+                    setTimeout(() => {
+                        importSpinner.classList.add('hidden');
+                        importSuccessDetails.classList.remove('hidden');
+                        const escapedFiles = task.files ? task.files.map(escapeHTML) : [];
+                        const fileList = escapedFiles.length > 0 ? escapedFiles.join('<br>• ') : 'Mídia baixada com sucesso';
+                        importSuccessMsg.innerHTML = `Mídia(s) baixada(s) e indexada(s) com sucesso na rádio:<br><strong style="color:var(--accent-green)">• ${fileList}</strong>`;
+                    }, 500);
+                } else if (task.status === 'error') {
+                    clearInterval(activeImportPollInterval);
+                    importSpinner.classList.add('hidden');
+                    importErrorDetails.classList.remove('hidden');
+                    importErrorMsg.innerText = task.error || task.message || 'Ocorreu um erro durante a importação.';
+                }
+            })
+            .catch(err => {
+                console.warn("Erro no polling de status:", err);
+            });
+    }, 800);
+}
+
+function updateImportProgressBar(percent, message) {
+    if (progressPercentEl) progressPercentEl.innerText = `${Math.round(percent)}%`;
+    if (progressFillEl) progressFillEl.style.width = `${percent}%`;
+    if (progressMsgEl) progressMsgEl.innerText = message;
+}
+
 function resetImportForm() {
+    if (activeImportPollInterval) clearInterval(activeImportPollInterval);
     if (urlImportForm) {
         urlImportForm.reset();
         urlImportForm.classList.remove('hidden');
@@ -739,4 +872,53 @@ function resetImportForm() {
 
 if (btnResetImport) btnResetImport.addEventListener('click', resetImportForm);
 if (btnRetryImport) btnRetryImport.addEventListener('click', resetImportForm);
+
+// --- 6. DISPARADOR / TESTADOR DE WEBHOOKS DE LIVE NOTIFICATION ---
+const webhookNotifyForm = document.getElementById('webhook-notify-form');
+const webhookResponseBox = document.getElementById('webhook-response-box');
+
+if (webhookNotifyForm) {
+    webhookNotifyForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const djName = document.getElementById('webhook-dj-name').value.trim();
+        const showTitle = document.getElementById('webhook-show-title').value.trim();
+        const webhookUrl = document.getElementById('webhook-url-input').value.trim();
+        
+        const btn = document.getElementById('btn-trigger-webhook');
+        const origHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Disparando Alerta...';
+        btn.disabled = true;
+        
+        fetch('http://localhost:8081/api/notify-live', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                dj_name: djName,
+                show_title: showTitle,
+                webhook_url: webhookUrl,
+                platform: 'discord'
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.innerHTML = origHTML;
+            btn.disabled = false;
+            
+            if (webhookResponseBox) {
+                webhookResponseBox.classList.remove('hidden');
+                webhookResponseBox.innerHTML = `<strong>Status:</strong> ${data.message}<br><br><code>${JSON.stringify(data.payload, null, 2)}</code>`;
+            }
+        })
+        .catch(err => {
+            btn.innerHTML = origHTML;
+            btn.disabled = false;
+            if (webhookResponseBox) {
+                webhookResponseBox.classList.remove('hidden');
+                webhookResponseBox.innerText = `Erro ao disparar webhook: ${err.message || err}`;
+            }
+        });
+    });
+}
+
 
