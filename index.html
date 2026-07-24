@@ -105,6 +105,11 @@
                             <div class="player-lcd-screen">
                                 <div class="lcd-tuner">
                                     <span class="lcd-frequency" id="lcd-frequency">FM 90.9 MHz</span>
+                                    <div class="viz-mode-group" id="viz-mode-group">
+                                        <button type="button" class="viz-mode-btn active" data-mode="bars" title="Equalizador LED">LED</button>
+                                        <button type="button" class="viz-mode-btn" data-mode="wave" title="Osciloscópio">WAVE</button>
+                                        <button type="button" class="viz-mode-btn" data-mode="vu" title="VU Meter Retrô">VU</button>
+                                    </div>
                                     <span class="lcd-signal"><i class="fa-solid fa-tower-broadcast"></i> TUNE</span>
                                 </div>
                                 <div class="lcd-visualizer-container">
@@ -156,11 +161,14 @@
                             <!-- Decentralization IPFS Meta Info (Styled like tape labels) -->
                             <div class="track-ipfs-info" id="track-ipfs-info">
                                 <span class="ipfs-badge" id="ipfs-cid-badge" title="Hash IPFS da faixa de áudio">
-                                    <i class="fa-solid fa-cube"></i> IPFS: <span id="track-ipfs-cid">Carregando...</span>
+                                    <i class="fa-solid fa-cube"></i> IPFS: <a id="track-ipfs-link" href="https://ipfs.io" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline;"><span id="track-ipfs-cid">Carregando...</span></a>
                                 </span>
                                 <span class="license-badge" id="license-badge" title="Licença de Distribuição Livre">
                                     <i class="fa-solid fa-scale-balanced"></i> <span id="track-license">CC-BY-NC</span>
                                 </span>
+                                <button type="button" class="btn-tip-artist" id="btn-tip-artist" title="Enviar gorjeta em Crypto (ETH/Polygon)">
+                                    <i class="fa-solid fa-coins"></i> Apoiar Artista
+                                </button>
                             </div>
 
                             <!-- Mechanical Cassette Keys & Volume Fader -->

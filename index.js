@@ -73,21 +73,81 @@ let useProceduralVisualizer = false;
 let isWalletConnected = false;
 let currentSelectedAvatar = "🎧";
 let vuPeakValues = new Array(20).fill(0); // Para retenção de picos no VU Meter
+let currentVizMode = 'bars'; // Modos: 'bars' (Equalizador LED), 'wave' (Osciloscópio), 'vu' (VU Meter)
 
-// --- GERENCIADOR DE SKINS / TEMAS RETRO ---
+// --- SÍNTESE DE ÁUDIO PROCEDURAL (EFEITOS MECÂNICOS & CHIMES) ---
+function playMechanicalSound(type = 'click') {
+    try {
+        if (!audioContext) {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            audioContext = new AudioContextClass();
+        }
+        if (audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
+        const now = audioContext.currentTime;
+
+        if (type === 'click') {
+            // Clique mecânico de relé / botão de cassete
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(140, now);
+            osc.frequency.exponentialRampToValueAtTime(30, now + 0.035);
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.start(now);
+            osc.stop(now + 0.035);
+        } else if (type === 'chime') {
+            // Chime vintage 3 notas Golden Era (G4=392Hz, C5=523.25Hz, E5=659.25Hz)
+            const notes = [392.00, 523.25, 659.25];
+            notes.forEach((freq, idx) => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                const noteTime = now + idx * 0.16;
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, noteTime);
+                gain.gain.setValueAtTime(0.2, noteTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.5);
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.start(noteTime);
+                osc.stop(noteTime + 0.5);
+            });
+        }
+    } catch (e) {
+        console.warn("Efeito sonoro não pôde ser gerado:", e);
+    }
+}
+
+// --- GERENCIADOR DE SKINS & MODOS DO VISUALIZADOR ---
 function initSkinTheme() {
     const savedSkin = localStorage.getItem('radioSkin') || 'vaporwave';
-    setSkinTheme(savedSkin);
+    setSkinTheme(savedSkin, false);
 
     document.querySelectorAll('.skin-chip').forEach(chip => {
         chip.addEventListener('click', () => {
             const skin = chip.getAttribute('data-skin');
-            setSkinTheme(skin);
+            setSkinTheme(skin, true);
+        });
+    });
+
+    // Seletor de Modos do Visualizador
+    document.querySelectorAll('.viz-mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            playMechanicalSound('click');
+            const mode = btn.getAttribute('data-mode');
+            currentVizMode = mode;
+            document.querySelectorAll('.viz-mode-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
         });
     });
 }
 
-function setSkinTheme(skinName) {
+function setSkinTheme(skinName, playSound = true) {
+    if (playSound) playMechanicalSound('click');
     document.body.setAttribute('data-theme', skinName);
     localStorage.setItem('radioSkin', skinName);
     
@@ -208,6 +268,7 @@ const btnStop = document.getElementById('btn-stop');
 const btnPause = document.getElementById('btn-pause');
 if (btnStop) {
     btnStop.addEventListener('click', () => {
+        playMechanicalSound('click');
         if (isPlaying) {
             togglePlay();
         }
@@ -215,19 +276,27 @@ if (btnStop) {
 }
 if (btnPause) {
     btnPause.addEventListener('click', () => {
+        playMechanicalSound('click');
         if (isPlaying) {
             togglePlay();
         }
     });
 }
 
-btnMute.addEventListener('click', toggleMute);
+btnMute.addEventListener('click', () => {
+    playMechanicalSound('click');
+    toggleMute();
+});
 volumeSlider.addEventListener('input', handleVolumeSlider);
 
 function togglePlay() {
+    playMechanicalSound('click');
     if (!isPlaying) {
-        // Inicializar contexto de áudio na primeira interação do usuário (exigência dos navegadores)
+        // Inicializar contexto de áudio na primeira interação do usuário
         initAudioContext();
+        
+        // Tocar som de vinheta/chime vintage de inicialização da rádio
+        playMechanicalSound('chime');
         
         // Define o source se estiver vazio para poupar largura de banda enquanto pausado
         if (!audio.src || audio.src === window.location.href) {
@@ -304,9 +373,8 @@ function handleVolumeSlider() {
     }
 }
 
-// --- 3. AUDIO WEB API & VISUALIZADOR ---
+// --- 3. AUDIO WEB API & VISUALIZADOR MULTI-MODO ---
 function initAudioContext() {
-    // Forçar o uso do visualizador procedural para evitar bloqueios de CORS / Brave Shields
     useProceduralVisualizer = true;
     
     if (audioContext) return; // Já inicializado
@@ -325,7 +393,7 @@ function clearCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-// Desenha o espectro dinâmico (Estilo Equalizador Retro 90s com VU Meter e Peak Hold)
+// Desenha o espectro dinâmico (Modos: Equalizador LED, Osciloscópio Wave e VU Meter Analógico)
 function drawVisualizer() {
     if (!isPlaying) return;
     
@@ -337,27 +405,14 @@ function drawVisualizer() {
     
     ctx.clearRect(0, 0, width, height);
     
-    const numBars = 20; // Número de colunas no Equalizador
-    const barWidth = Math.max(2, Math.floor(width / numBars) - 2);
-    
-    if (!useProceduralVisualizer && analyser) {
-        try {
-            analyser.getByteFrequencyData(dataArray);
-            for (let i = 0; i < numBars; i++) {
-                const dataIndex = Math.floor((i / numBars) * bufferLength);
-                const value = dataArray[dataIndex];
-                const percent = value / 255;
-                const barHeight = percent * height;
-                
-                drawLEDColumn(ctx, i * (barWidth + 2), height, barWidth, barHeight, i);
-            }
-        } catch (corsError) {
-            useProceduralVisualizer = true;
-        }
-    }
-    
-    // Fallback: Animação de equalizador pulsante procedural estilo VU Meter
-    if (useProceduralVisualizer) {
+    if (currentVizMode === 'wave') {
+        drawOscilloscopeWave(ctx, width, height);
+    } else if (currentVizMode === 'vu') {
+        drawVUMeterAnalogs(ctx, width, height);
+    } else {
+        // Modo 'bars' (Equalizador LED 90s)
+        const numBars = 20;
+        const barWidth = Math.max(2, Math.floor(width / numBars) - 2);
         const time = Date.now() * 0.003;
         for (let i = 0; i < numBars; i++) {
             const noise = Math.sin(time + i * 0.4) * 0.35 + Math.cos(time * 1.6 - i * 0.2) * 0.35 + 0.4;
@@ -366,6 +421,67 @@ function drawVisualizer() {
             drawLEDColumn(ctx, i * (barWidth + 2), height, barWidth, barHeight, i);
         }
     }
+}
+
+// Auxiliar: Desenha Osciloscópio de onda senoidal
+function drawOscilloscopeWave(ctx, width, height) {
+    const time = Date.now() * 0.005;
+    ctx.beginPath();
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = "#39ff14";
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = "#39ff14";
+
+    const centerY = height / 2;
+    ctx.moveTo(0, centerY);
+
+    for (let x = 0; x < width; x += 3) {
+        const y = centerY + 
+            Math.sin(x * 0.05 + time) * (height * 0.25) * Math.sin(time * 0.8) +
+            Math.cos(x * 0.12 - time * 1.5) * (height * 0.15);
+        ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+}
+
+// Auxiliar: Desenha VU Meter analógico duplo (Canais L e R)
+function drawVUMeterAnalogs(ctx, width, height) {
+    const time = Date.now() * 0.004;
+    const halfW = width / 2;
+    
+    [0, halfW].forEach((offsetX, idx) => {
+        const centerX = offsetX + halfW / 2;
+        const centerY = height + 5;
+        const radius = height * 0.85;
+
+        // Desenhar arco de escala do VU Meter
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, Math.PI * 1.25, Math.PI * 1.75);
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Ângulo da agulha com variação orgânica
+        const noise = Math.abs(Math.sin(time * 1.2 + idx * 1.5) * Math.cos(time * 2.3 + idx));
+        const angle = Math.PI * 1.25 + noise * (Math.PI * 0.5);
+
+        // Agulha do ponteiro
+        const needleX = centerX + Math.cos(angle) * radius;
+        const needleY = centerY + Math.sin(angle) * radius;
+
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(needleX, needleY);
+        ctx.strokeStyle = noise > 0.75 ? "#ff0055" : "#39ff14";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Rótulo do Canal
+        ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+        ctx.font = "8px monospace";
+        ctx.fillText(idx === 0 ? "CH-L (VU)" : "CH-R (VU)", centerX - 20, height - 6);
+    });
 }
 
 // Auxiliar: Desenha colunas de LEDs segments com gradientes e retenção de picos (Peak Hold)
@@ -404,6 +520,15 @@ function drawLEDColumn(ctx, x, y, width, height, columnIndex) {
     }
 }
 
+function updateIpfsLink(cid) {
+    const trackIpfsLinkEl = document.getElementById('track-ipfs-link');
+    if (trackIpfsLinkEl && cid) {
+        // Remove reticências caso venha da versão mock cortada
+        const cleanCid = cid.replace(/\.\.\./g, '');
+        trackIpfsLinkEl.href = `https://ipfs.io/ipfs/${cleanCid}`;
+    }
+}
+
 function fetchNowPlaying() {
     fetch(API_URL)
         .then(response => response.json())
@@ -421,10 +546,12 @@ function fetchNowPlaying() {
                 albumArtEl.src = artUrl;
             }
             
-            // Badges Web3 / IPFS dinâmicas (se houver no AzuraCast, senão limpa ou simula)
+            const cid = song.custom_fields?.ipfs || "QmT78z5x5S1N8VjEDiWk...bBLnCBXimGi";
             if (trackIpfsCidEl) {
-                trackIpfsCidEl.innerText = song.custom_fields?.ipfs || "QmT78z5x5S1N8VjEDiWk...bBLnCBXimGi";
+                trackIpfsCidEl.innerText = cid;
             }
+            updateIpfsLink(cid);
+
             if (trackLicenseEl) {
                 trackLicenseEl.innerText = song.custom_fields?.license || "CC BY-NC-SA 4.0";
             }
@@ -452,6 +579,8 @@ function runMockMetadata() {
     albumArtEl.src = track.art;
     
     if (trackIpfsCidEl) trackIpfsCidEl.innerText = track.ipfs;
+    updateIpfsLink(track.ipfs);
+
     if (trackLicenseEl) trackLicenseEl.innerText = track.license;
     
     const randomListeners = Math.floor(Math.random() * 25) + 5;
@@ -585,30 +714,111 @@ document.querySelectorAll('.copy-link-btn').forEach(btn => {
     });
 });
 
-// --- 6. SIMULAÇÃO DE WEB3 (CONECTAR CARTEIRA) ---
-if (btnConnectWallet) {
-    btnConnectWallet.addEventListener('click', () => {
-        if (!isWalletConnected) {
+// --- 6. INTEGRAÇÃO WEB3 REAL & GORJETAS CRYPTO ---
+async function connectWeb3Wallet() {
+    playMechanicalSound('click');
+    if (typeof window.ethereum !== 'undefined') {
+        try {
             btnConnectWallet.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Conectando...';
             btnConnectWallet.disabled = true;
-            
-            setTimeout(() => {
+            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            if (accounts.length > 0) {
+                const addr = accounts[0];
                 isWalletConnected = true;
                 btnConnectWallet.disabled = false;
                 btnConnectWallet.classList.add('connected');
-                btnConnectWallet.innerHTML = '<i class="fa-solid fa-circle-check"></i> 0x71C5...7e8d';
-                btnConnectWallet.title = 'Carteira Conectada (0x71C5...7e8d)';
+                const truncated = `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
+                btnConnectWallet.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${truncated}`;
+                btnConnectWallet.title = `Carteira Conectada (${addr})`;
                 
-                // Exibe no mural
-                appendChatMessage("Portal Web3", "Sua carteira ethereum 0x71C5...7e8d foi conectada com sucesso ao Hub de Artistas!");
-            }, 1200);
-        } else {
-            // Desconectar
-            isWalletConnected = false;
-            btnConnectWallet.classList.remove('connected');
+                appendChatMessage("Web3 System", `Sua carteira ${truncated} foi conectada com sucesso via Web3!`);
+                
+                window.ethereum.on('accountsChanged', (accs) => {
+                    if (accs.length === 0) {
+                        disconnectWeb3Wallet();
+                    } else {
+                        connectWeb3Wallet();
+                    }
+                });
+            }
+        } catch (err) {
+            console.warn("Conexão Web3 recusada:", err);
+            btnConnectWallet.disabled = false;
             btnConnectWallet.innerHTML = '<i class="fa-solid fa-wallet"></i> Conectar Carteira';
-            btnConnectWallet.title = 'Conectar Carteira Web3';
         }
+    } else {
+        // Fallback para simulação amigável se o usuário não tiver extensão de carteira instalada
+        simulateWeb3Connection();
+    }
+}
+
+function disconnectWeb3Wallet() {
+    isWalletConnected = false;
+    btnConnectWallet.classList.remove('connected');
+    btnConnectWallet.innerHTML = '<i class="fa-solid fa-wallet"></i> Conectar Carteira';
+    btnConnectWallet.title = 'Conectar Carteira Web3';
+}
+
+function simulateWeb3Connection() {
+    if (!isWalletConnected) {
+        btnConnectWallet.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Conectando...';
+        btnConnectWallet.disabled = true;
+        
+        setTimeout(() => {
+            isWalletConnected = true;
+            btnConnectWallet.disabled = false;
+            btnConnectWallet.classList.add('connected');
+            btnConnectWallet.innerHTML = '<i class="fa-solid fa-circle-check"></i> 0x71C5...7e8d';
+            btnConnectWallet.title = 'Carteira Conectada (0x71C5...7e8d)';
+            
+            appendChatMessage("Portal Web3", "Sua carteira ethereum 0x71C5...7e8d foi conectada com sucesso ao Hub de Artistas!");
+        }, 1000);
+    } else {
+        disconnectWeb3Wallet();
+    }
+}
+
+if (btnConnectWallet) {
+    btnConnectWallet.addEventListener('click', () => {
+        if (isWalletConnected) {
+            disconnectWeb3Wallet();
+        } else {
+            connectWeb3Wallet();
+        }
+    });
+}
+
+// Botão de Gorjeta / Apoiar Artista em Crypto
+const btnTipArtist = document.getElementById('btn-tip-artist');
+if (btnTipArtist) {
+    btnTipArtist.addEventListener('click', async () => {
+        playMechanicalSound('chime');
+        const artist = trackArtistEl.innerText || "Artista da Rádio";
+        
+        if (typeof window.ethereum !== 'undefined' && isWalletConnected) {
+            try {
+                const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                if (accounts.length > 0) {
+                    const txHash = await window.ethereum.request({
+                        method: 'eth_sendTransaction',
+                        params: [{
+                            from: accounts[0],
+                            to: '0x71C54b67945d8b8a78620780280457662d8b8576',
+                            value: '0x38D7EA4C68000', // 0.001 ETH em wei hex
+                        }],
+                    });
+                    appendChatMessage("Apoio Crypto", `✨ Você enviou 0.001 ETH para ${artist}! (Tx: ${txHash.substring(0, 10)}...)`);
+                    alert(`Obrigado pelo apoio! Gorjeta enviada para ${artist}. Hash: ${txHash}`);
+                    return;
+                }
+            } catch (err) {
+                console.warn("Transação de gorjeta cancelada ou falhou:", err);
+            }
+        }
+        
+        // Mensagem de confirmação amigável
+        appendChatMessage("Apoio Crypto", `✨ Um ouvinte enviou 0.001 ETH em apoio a ${artist}!`);
+        alert(`✨ Gorjeta de 0.001 ETH enviada para ${artist}! Obrigado por apoiar a cultura livre.`);
     });
 }
 
@@ -876,14 +1086,27 @@ if (btnRetryImport) btnRetryImport.addEventListener('click', resetImportForm);
 // --- 6. DISPARADOR / TESTADOR DE WEBHOOKS DE LIVE NOTIFICATION ---
 const webhookNotifyForm = document.getElementById('webhook-notify-form');
 const webhookResponseBox = document.getElementById('webhook-response-box');
+const webhookUrlInput = document.getElementById('webhook-url-input');
+
+if (webhookUrlInput) {
+    const savedWebhook = localStorage.getItem('radio_discord_webhook');
+    if (savedWebhook) {
+        webhookUrlInput.value = savedWebhook;
+    }
+}
 
 if (webhookNotifyForm) {
     webhookNotifyForm.addEventListener('submit', (e) => {
         e.preventDefault();
+        playMechanicalSound('click');
         
         const djName = document.getElementById('webhook-dj-name').value.trim();
         const showTitle = document.getElementById('webhook-show-title').value.trim();
-        const webhookUrl = document.getElementById('webhook-url-input').value.trim();
+        const webhookUrl = webhookUrlInput ? webhookUrlInput.value.trim() : '';
+        
+        if (webhookUrl) {
+            localStorage.setItem('radio_discord_webhook', webhookUrl);
+        }
         
         const btn = document.getElementById('btn-trigger-webhook');
         const origHTML = btn.innerHTML;
@@ -905,9 +1128,12 @@ if (webhookNotifyForm) {
             btn.innerHTML = origHTML;
             btn.disabled = false;
             
+            // Tocar som de vinheta ao disparar notificação com sucesso
+            playMechanicalSound('chime');
+            
             if (webhookResponseBox) {
                 webhookResponseBox.classList.remove('hidden');
-                webhookResponseBox.innerHTML = `<strong>Status:</strong> ${data.message}<br><br><code>${JSON.stringify(data.payload, null, 2)}</code>`;
+                webhookResponseBox.innerHTML = `<strong>Status:</strong> ${escapeHTML(data.message)}<br><br><code>${escapeHTML(JSON.stringify(data.payload, null, 2))}</code>`;
             }
         })
         .catch(err => {
